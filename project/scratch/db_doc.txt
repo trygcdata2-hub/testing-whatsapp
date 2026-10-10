@@ -1,0 +1,34 @@
+
+=========================================
+SHEET: ci.status
+=========================================
+    status  how many for each status (influencers can have more than one status because he is in many campaigns)                  Meaning                                Unnamed: 3
+0        0                                                                                               2645082            Added to List  دا انه اضاف في list بس متمش التواصل معاه
+1        1                                                                                                 10869             confirmation                                       NaN
+2        2                                                                                                 20440                    Visit                                        سئ
+3        3                                                                                                 31984             Missed Visit                                       NaN
+4        4                                                                                                    92   Cancel from influencer                                       NaN
+5        5                                                                                                   258                  waiting                                       NaN
+6        6                                                                                                     1                Incorrect                                       NaN
+7        7                                                                                                225801          Posted/coverage                         عمل العملية كاملة
+8        8                                                                                                  1251                 Delivery                                        سئ
+9        9                                                                                                 10419      Not Delivery/mossed                                       NaN
+10      10                                                                                                   684                   Reject                                       NaN
+11      11                                                                                                    80                    Share                   اتسجل انه هيعمل العملية
+12      12                                                                                                  3415                Not Share                                       NaN
+13      13                                                                                                    31                     post                   اتسجل انه هيعمل العملية
+14      14                                                                                                    29                 Not Post                                       NaN
+15      15                                                                                                  8297                 Approved                                       NaN
+16      17                                                                                                   652     Canceled from client                                       NaN
+17      18                                                                                                 17623       Reject from Client                                       NaN
+
+=========================================
+SHEET: i.active
+=========================================
+  influencers  status  active
+0             pending       0
+1              active       1
+2            inactive       2
+3              reject       3
+4               block       4
+5         no response       5

@@ -1,0 +1,139 @@
+================================================================================
+COMPLETE SYSTEM SCOPE, ARCHITECTURE & DELIVERABLES
+================================================================================
+Document Version: 2.0 (Comprehensive Master Scope)
+Status: All historical requirements, metrics, and workflows captured and mapped.
+
+--------------------------------------------------------------------------------
+1. SYSTEM OBJECTIVE & OVERVIEW
+--------------------------------------------------------------------------------
+This system is an Automated Intelligence & Operations Dashboard (Streamlit Web App
++ Python ETL Pipeline) designed to unify all operational streams into a single
+source of truth:
+  1. WhatsApp Pro Message Stream (Live/Historical DB)
+  2. Shift Roster & Line Tasks (Google Spreadsheet via Service Account)
+  3. Active Campaigns & Database Outcomes (System Core DB)
+  4. Manual Tracking & Audit Sheets (Dropbox / Google Sheets)
+
+--------------------------------------------------------------------------------
+2. SYSTEM ARCHITECTURE & ENGINE STRUCTURE
+--------------------------------------------------------------------------------
+A. DATA INTEGRATION (INPUTS):
+   - WhatsApp Pro DB / CSV (Raw Messages)
+   - Google Spreadsheet Roster & Tasks (STRICT READ-ONLY)
+   - WhatsApp Lines Mapping (whatsappAccId <-> line_name <-> phone)
+   - System DB Active Campaigns (active_campaigns.sql)
+   - Dropbox Campaign Logs
+
+B. PROCESSING CORE (PYTHON ETL ENGINE):
+   - Message Cleaner & Filter (Exclude group IDs '120...', test accounts)
+   - Shift-Based Line Attribution Engine (Map every message to line holder)
+   - Metrics, SLAs & Funnel Engine (Compute reply speeds, unanswered, lifts)
+
+C. STREAMLIT APPLICATION (INTERACTIVE 5-TAB DASHBOARD):
+   - Tab 1: Live Pulse & Operations Alerts
+   - Tab 2: Agent Scorecard & Leaderboards
+   - Tab 3: Influencer Intelligence & Behavior
+   - Tab 4: Campaign Health & Dropbox Reconciliation
+   - Tab 5: Line Health, Infrastructure & Data Quality
+
+--------------------------------------------------------------------------------
+3. DETAILED DASHBOARD MODULES & DELIVERABLES
+--------------------------------------------------------------------------------
+
+MODULE 1: LIVE PULSE & OPERATIONS ALERTS (REAL-TIME VIEW)
+--------------------------------------------------------
+[x] Live Unanswered Alert Feed: Shows all conversations where influencer was last
+    sender (Dynamic Unanswered Rule) and elapsed minutes.
+[x] Live Shift Line Holders: Shows who currently holds each of the 30 active
+    WhatsApp lines based on the live shift roster.
+[x] Urgent SLA Violations: Highlights messages exceeding 15m / 60m thresholds.
+[x] Daily Trend Tracker: Real-time counter of inbound messages, replies, and
+    confirmations vs. daily targets.
+
+MODULE 2: AGENT PERFORMANCE & LEADERBOARDS (THE OPERATIONS WING)
+---------------------------------------------------------------
+[x] Speed & SLA Compliance:
+    - Median reply time (overall and by shift: Morning, Between, Night).
+    - % answered within 15 minutes, % answered within 60 minutes.
+    - Performance during peak load (e.g. 16:00 rush).
+[x] Unanswered Chat Attribution:
+    - Total unanswered bursts per agent during their shift hours.
+    - Unanswered rate (% of assigned inbound chats left without reply).
+    - Attribution of outside-platform messages (original whatsapp / AnyDesk)
+      to the line holder at that time.
+[x] Role-Based Fair Evaluation:
+    - Automatic separation of Inbox / Responders (Live Response) vs.
+      Outreach / Pitchers (Send Inv).
+    - Outreach KPIs: Total invitations sent, reply rate (%), acceptance rate (%).
+    - Inbox KPIs: Response speed, unanswered count, objection handling, conversion.
+[x] "After-Yes" Follow-Up & Logistics Quality:
+    - Tracks whether agent sent logistics (location, brief, date confirmation)
+      after influencer confirmed.
+    - Flags cases where influencer said "Yes" but got no reply within 24 hours.
+[x] Persuasion & Message Quality Metrics:
+    - Template share (% copy-pasted templates vs. customized messages).
+    - Linguistic effectiveness (question endings, closed vs open questions).
+    - Brand-adjusted scorecards (evaluating agents fairly across brand difficulty).
+
+MODULE 3: INFLUENCER INTELLIGENCE & BEHAVIOR (THE INFLUENCER WING)
+-----------------------------------------------------------------
+[x] Influencer Response Profiles:
+    - Fast responders vs. slow responders vs. non-responders.
+    - Historical acceptance rate per influencer across campaigns.
+[x] Ghosting & Flaker Tracking:
+    - Identifies influencers who accept ("Yes / Confirmed") but fail to show up
+      or complete coverage.
+    - Cross-references WhatsApp "Yes" with System DB visited and coverage statuses.
+[x] Country & Segment Analysis:
+    - Separate filtering and benchmarks for KSA vs. Kuwait vs. UAE vs. Egypt.
+    - Tailored tracking for Kuwait campaigns to monitor lower response dynamics.
+[x] Searchable Influencer History:
+    - Lookup any influencer by phone/handle to see past chat threads, campaigns,
+      and reliability scores.
+
+MODULE 4: CAMPAIGN HEALTH & DROPBOX RECONCILIATION (THE MANAGEMENT WING)
+-----------------------------------------------------------------------
+[x] Campaign Funnel Progression:
+    - Visual funnel: Invited -> Replied -> Confirmed -> Logistics -> Visited -> Coverage.
+[x] Automated Dropbox vs. System Reconciliation:
+    - Automates dropbox_vs_system_report.py logic.
+    - Compares confirmations in System DB against manual Dropbox sheets.
+    - Flags discrepancies:
+        * Confirmed in Dropbox but missing in System.
+        * Visited but missing coverage links.
+        * Campaigns missing target quotas.
+[x] Campaign Cards & Quick Reply Reference:
+    - Built-in summary for active campaigns (dates, branches, rules, compensation)
+      to resolve top recurring questions (dates: 6,286, location: 3,078,
+      content: 2,847, payment: 2,724).
+
+MODULE 5: LINE HEALTH, INFRASTRUCTURE & DATA QUALITY (TECHNICAL WING)
+--------------------------------------------------------------------
+[x] WhatsApp Lines Status Monitor:
+    - Live status of all lines (Active, Banned, Mirrored, RDP, AnyDesk) integrated
+      with NUMBERS Status sheet.
+[x] Data Quality & Anomaly Audit:
+    - Automatic filtering of WhatsApp group messages (18-digit IDs starting with 120).
+    - Filtering of internal test accounts (trainee01, Developers Team, IT Team).
+    - Handling of NULL contacts and system change events.
+
+--------------------------------------------------------------------------------
+4. SOURCE CODE & ARCHITECTURE MAPPING
+--------------------------------------------------------------------------------
+Component              File Path              Status     Description
+---------------------  ---------------------  ---------  ---------------------------
+System Config          src/config.py          Complete   Paths, shift hours, API settings
+Data Connector         src/data_loader.py     Complete   Safe loader for Sheets, CSV, Lines
+ETL & Attribution      src/pipeline.py        Next       Attribution & shift joining
+KPI & Analytics        src/metrics.py         Next       Speed, unanswered, funnel lifts
+Streamlit UI           src/app.py             Next       Interactive web dashboard
+Background Sync        src/sync_jobs.py       Next       Scheduled DB replica & Dropbox sync
+
+--------------------------------------------------------------------------------
+5. SECURITY & GOVERNANCE CONSTRAINTS
+--------------------------------------------------------------------------------
+1. Google Sheets Access: STRICT READ-ONLY via Service Account credentials.
+2. Database Access: STRICT READ-ONLY (SELECT permissions only).
+3. Data Privacy (PII): Phone numbers and personal details masked in shared views.
+================================================================================

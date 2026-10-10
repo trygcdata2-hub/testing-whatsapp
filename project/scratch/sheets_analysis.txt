@@ -1,0 +1,143 @@
+Spreadsheet: Chat Team 's Tasks
+Total Sheets: 13
+
+==================================================
+SHEET: 'Handover ( GC )' (id: 895551740)
+Rows: 2429, Columns: 14
+Headers: ['Date', 'Shift', 'Name', 'Office', 'Campaign Name', 'Illustration', 'Task', 'Priority', 'Status', 'Column 10', 'Column 11', 'Column 12', 'Column 13', 'Column 14']
+Sample Rows:
+  Row 1: ['', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 2: ['2-Sep', 'Between', 'Magdy Aly', 'KSA', 'Starbucks ', 'عملنا فولو اب نكمل ريمندر 1 ', 'Send Rem 1 ', 'Urgent', '', '', '', '', '', '']
+  Row 3: ['2-Sep', 'Between', 'Magdy Aly', 'KSA', 'Half Million Signature ', 'جت ليست جديده بعتنا فيها elite و gc بس ال gc بعتنا الاكتف من باك اب 4 بس نكمل الباقي', 'Send Invitations', 'Urgent', '', '', '', '', '', '']
+  Row 4: ['2-Sep', 'Between', 'Magdy Aly', 'KSA', 'Starbucks ', '', 'Follow up', 'High', '', '', '', '', '', '']
+  Row 5: ['2-Sep', 'Between', 'Magdy Aly', 'KW', 'jotun ', 'نكمل ريمندر 1', 'Send Rem 1 ', 'Urgent', '', '', '', '', '', '']
+
+==================================================
+SHEET: 'NUMBERS Status' (id: 1150938696)
+Rows: 19, Columns: 10
+Headers: ['Column 1', 'Number ', 'Pro Office', 'Nick Name', 'Number country', 'Campaign Names', 'Status', 'Time', 'Find on', 'Notes']
+Sample Rows:
+  Row 1: ['KW, BAH,QTR, OMAN', '', '', 'KW line', 'KW ', 'bfl all\n kw campagin', 'Ban link', '', 'Mirror', '']
+  Row 2: ['KSA', '96567750600', '', 'KSA GC1', 'KW ', 'KSA', 'Banned', '', '', '']
+  Row 3: ['KSA', '', '', 'starbucks line (ksa)', 'KSA', 'starbucks campagin', 'Banned', '', '', '']
+  Row 4: ['KSA', '', '', 'Houssam 2', 'KSA', 'starbucks campagin', 'Banned', '', '', '']
+  Row 5: ['All Campagin', '', '', 'Follow up no', 'EGY', 'Missing', 'active', '', 'Mirror', '']
+
+==================================================
+SHEET: 'GC Handover' (id: 844623704)
+Rows: 379, Columns: 12
+Headers: ['Date', 'Office', 'Campaign Name', 'Current status\n', 'Completed tasks\n', 'Pending tasks\n', 'Issues / risks\n', 'Next shift actions\n', 'Priority', 'Deadline\n', 'campaign update', 'Responsible person.']
+Sample Rows:
+  Row 1: ['14-Jan', 'ِِAll', 'Revlon-Visit-KSA-Qatar-Jan-2026', "Didn't Achieve Target", 'خلصنا ال INV ف ال active', 'تابعها لايف من ع الرقم المصرى', 'الحمله Req for approval', 'inv فى ال inactive ', 'Medium', 'March', 'مش بناخد date هى req', 'Ahmed gamal']
+  Row 2: ['14-Jan', 'ِِAll', 'List-Revlon-Visit-KSA-OMAN-Jan-2026', "Didn't Achieve Target", 'اشتغلوا عليها INV', 'تابعها لايف من ع الرقم المصرى', '-', '-', 'Urgent', 'March', 'الحمله هتبدا يوم 18 يناير ', 'Ahmed gamal']
+  Row 3: ['14-Jan', 'ِِAll', 'List Revlon-Visit-Highest Platform-Bah-Jan-2026', "Didn't Achieve Target", 'خلصنا ال INV ', 'تابعها لايف من ع الرقم المصرى', '-', '-', 'Low', 'March', 'بناخد تواربخ عادى واهم حاجه ال Branch', 'Ahmed gamal']
+  Row 4: ['14-Jan', 'KW', 'List Revlon-visit-KSA-KW-Jan-2026', "Didn't Achieve Target", 'خلصنا ال INV ', 'تابعها لايف من ع الرقم االكويتى', '-', '-', 'Low', 'March', 'بناخد تواربخ عادى واهم حاجه ال Branch', 'Ahmed gamal']
+  Row 5: ['14-Jan', 'ِِAll', 'List - Real Techniques- Visit - bh -jan -2026', "Didn't Achieve Target", 'خلصنا ال INV ', 'تابعها لايف من ع الرقم المصرى', '-', 'REM 1', 'Low', 'March', 'الحمله جبنا التارجيت بتاعها منخدش كونفرميشن تانى', 'Ahmed gamal']
+
+==================================================
+SHEET: 'Tasks ( GC )' (id: 1854790840)
+Rows: 12266, Columns: 28
+Headers: [' ,mggggggg', 'Name', 'Shift', 'Campaign Name', 'Task', 'From', 'To', 'Status', 'Start Time', 'End Time', 'Notes', 'Audit \n( For Senior Chat Team )', 'Quality', 'Column 14', 'Column 15', 'Column 16', 'Column 17', 'Column 18', 'Column 19', 'Column 20', 'Column 21', 'Column 22', 'Column 23', 'Column 24', 'Column 25', 'Column 26', 'Column 27', 'Column 28']
+Sample Rows:
+  Row 1: ['Aug-31', '', '', 'Night Shift', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 2: ['Aug-31', 'Magdy aly', 'Night', 'KW ( Elite ) Number', 'Live Response', '-', '-', 'Completed', '1:35 AM', '8:33 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 3: ['Aug-31', 'Magdy aly', 'Night', 'KW ( GC ) Number', 'Live Response', '-', '-', 'Completed', '2:17 AM', '8:32 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 4: ['Aug-31', 'Magdy aly', 'Night', 'Elite KSA Number ', 'Live Response', '-', '-', 'Completed', '1:39 AM', '8:34 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 5: ['Aug-31', 'Mohamed Gamal ', 'Night', 'All Lines Numbers', 'Live Response', '-', '-', 'Completed', '1:33 AM', '5:01 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+==================================================
+SHEET: 'what's app tasks' (id: 1975448556)
+Rows: 6371, Columns: 15
+Headers: ['65', 'Name', 'Shift', 'Campaign Name', 'Task', 'From', 'To', 'status', 'Start Time', 'End Time', 'Notes', 'Column 11', 'Column 14', 'Column 12', 'Column 13']
+Sample Rows:
+  Row 1: ['1 August', 'Moring', 'Morning', '', 'Morning ', 'Morning', 'Morning', 'Morning', '', '', '', '', '', '', '']
+  Row 2: ['1 August', 'Mohamed Gamal', 'Morning', 'aziz line ', 'Live Response', '', '', 'Completed', '2:59 PM', '11:26 PM', '', '', '', '', '']
+  Row 3: ['1 August', 'Mohamed Gamal', 'Morning', 'omar line ', 'Live Response', '', '', 'Completed', '', '', '', '', '', '', '']
+  Row 4: ['1 August', 'Mohamed Gamal', 'Morning', 'Society by Sofleur - visit - ksa - jun - 2026', 'Follow Up, Audit Sheet', '', '', 'Completed', '', '4:25 PM', '', '', '', '', '']
+  Row 5: ['1 August', 'Mohamed Gamal', 'Morning', 'Marble - Visit -Highest platform - KSA -Jul -2026', 'Follow Up, Audit Sheet', '', '', 'Completed', '', '4:29 PM', '', '', '', '', '']
+
+==================================================
+SHEET: 'What's app Handover' (id: 465683271)
+Rows: 1422, Columns: 13
+Headers: ['Date', 'Office', 'Campaign Name', 'Current status\n', 'Completed tasks\n', 'Pending tasks\n', 'Issues / risks\n', 'Next shift actions\n', 'Priority', 'Deadline\n', 'campaign update', 'Responsable person.', 'Number Status']
+Sample Rows:
+  Row 1: ['1-12', 'KSA', 'Starbucks(الفخامة) - Visit - Tiktok - KSA - Dec - 2025', "Didn't Achieve Target", 'بعتنا Inv ', 'محتاجين نكمل Inv ضروري ', '/', 'محتاجين نبعت INV', 'Urgent', '1-18', '/', '', '']
+  Row 2: ['1-12', 'KSA', 'Starbucks(بيستاشيو) - Visit - Highestplatform - KSA -Dec - 2025', "Didn't Achieve Target", 'بعتنا Inv ', 'محتاجين نكمل Inv ضروري ', '/', 'محتاجين نبعت INV', 'Urgent', '1-18', '/', '', '']
+  Row 3: ['1-12', 'KSA', 'Visit-Hadayamall-Tiktok-Ksa-Nov-2025', 'Need List', 'Send Inv', 'Rem 1', '/', '/', '', '1-31', '/', '', '']
+  Row 4: ['1-12', 'KSA', 'Sign - Visit - Order - Ksa - Dec - 2025', "Didn't Achieve Target", 'Send Inv', 'Rem\nFollow-up', '/', 'محتاجين Follow-up علي الحملة', 'High', '1-31', '/', '', '']
+  Row 5: ['1-12', 'KSA', 'Zuma - Visit - Highest Platform - Ksa - Dec - 2025', 'Need List', 'Joy Award List\n', 'Follow-up\nRem 1', '/', 'محتاجين نعمل Follow-up علي الحملة \nوظبط رزرفيشن بكرا ونبعتها', 'Urgent', '1-25', '/', '', '']
+
+==================================================
+SHEET: 'Line Status' (id: 1720859392)
+Rows: 16, Columns: 7
+Headers: ['Date', 'Line', 'Region & country', 'Responspile person', 'shift', 'Current status\n', 'Notes']
+Sample Rows:
+  Row 1: ['7/16/2026', 'Elite ksa -2', '', '', 'Between', 'Active', 'pro']
+  Row 2: ['7/16/2026', 'Elite kw', '', '', 'Between', 'Active', 'mirrior']
+  Row 3: ['7/16/2026', 'Elite activation', '', '', 'Between', 'Ban', 'ban ']
+  Row 4: ['7/16/2026', 'Sara', '', '', 'Between', 'Active', 'pro']
+  Row 5: ['7/16/2026', 'Noura', '', '', 'Between', 'Ban', 'ban ']
+
+==================================================
+SHEET: 'EGY TASKS' (id: 1299021902)
+Rows: 76, Columns: 24
+Headers: ['DATE', 'Name', 'Shift', 'Campaign Name', 'Task', 'From', 'To', 'Status', 'Start Time', 'End Time', 'Notes', 'Audit \n( For Senior Chat Team )', 'Quality', 'Column 14', 'Column 15', 'Column 16', 'Column 17', 'Column 18', 'Column 19', 'Column 20', 'Column 21', 'Column 22', 'Column 23', 'Column 24']
+Sample Rows:
+  Row 1: ['21-Jan', '', 'Morning', 'Fnp-valentine day-Delivery-Highst platform-Riyadh- audit', 'Audit List', '', '', 'Completed', '11:45 PM', '8:05 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 2: ['21-Jan', '', 'Morning', 'Fnp-valentine day-Delivery-Highst platform-Riyadh- follow up ', 'Follow Up', '', '', 'Completed', '', '8:05 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 3: ['', '', '', 'follow up fnp  face apperance sheets ', 'Follow Up', '', '', 'In progress', '4:16 PM', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 4: ['21-Jan', '', 'Morning', 'Fnp - valentine day-Delivery-Highst platform-Jeddah- audit', 'Audit List', '', '', 'Completed', '', '8:05 AM', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  Row 5: ['21-Jan', '', 'Morning', 'Fnp - valentine day-Delivery-Highst platform-Jeddah- reminder', 'Rem 1', '4-50', '57-89', 'Completed', '', '8:05 AM', 'in active list ', '', '', '', '', '', '', '', '', '', '', '', '', '']
+
+==================================================
+SHEET: 'History' (id: 394462122)
+Rows: 3, Columns: 6
+Headers: ['Office', 'Number', 'Status', 'Date', 'Ban Time', 'Back To Work Time']
+Sample Rows:
+  Row 1: ['KSA', 'starbucks line (ksa)', 'Banned', '10/18/2025', '3:52:53 PM', '']
+  Row 2: ['KW ', 'KW line', 'Banned', '10/18/2025', '3:00:00 PM', '']
+
+==================================================
+SHEET: 'Follow Up ' (id: 1698246045)
+Rows: 133, Columns: 9
+Headers: ['Date', 'Name', 'Shift', 'Campaign Name', 'Task', 'Status', 'Start Time', 'End Time', 'Notes']
+Sample Rows:
+  Row 1: ['20-Oct', '', '', 'Morning Shift ', '', '', '', '', '']
+  Row 2: ['20-Oct', 'Magdy Aly', 'Morning', 'Follow Up Number', 'Live Response', 'In progress', '10:35 AM', '', '']
+  Row 3: ['20-Oct', 'Magdy Aly', 'Morning', 'Bagatelle - Visit - Highest Platform - KSA - Oct - 2025', 'Need Coverage ', 'Completed', '11:01 AM', '11:02 AM', '']
+  Row 4: ['20-Oct', 'Magdy Aly', 'Morning', 'Bagatelle - Visit - Highest Platform - KSA - Oct - 2025', 'Missing Coverge', 'Completed', '11:02 AM', '11:02 AM', '']
+  Row 5: ['20-Oct', 'Magdy Aly', 'Morning', 'Mnky Hseksa- Visit - Highest Platform - KSA - Oct - 2025', 'Need Coverage ', 'Completed', '11:03 AM', '11:09 AM', '']
+
+==================================================
+SHEET: 'Briefs' (id: 0)
+Rows: 48, Columns: 67
+Headers: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+Sample Rows:
+  Row 1: ['Day 👉👉', '1-September', '', '', '', '', '', '2-September', '', '', '', '', '', '3-September', '', '', '', '', '', '4-September', '', '', '', '', '', '5-September', '', '', '', '', '', '6-September', '', '', '', '', '', '7-September', '', '', '', '', '', '8-September', '', '', '', '', '', '9-September', '', '', '', '', '', '10-September', '', '', '', '', '', '11-September', '', '', '', '', '']
+  Row 2: ['Name 👉👉', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '', 'Sender', '', '', 'Auditor', '', '']
+  Row 3: ['', 'Yousef Elsayed', '', '', 'Mohamed Gamal', '', '', 'Ahmed Bedair', '', '', '', '', '', 'Magdy Aly', '', '', 'Youssef Elsayed', '', '', 'Magdy Aly', '', '', 'Youssef Elsayed', '', '', 'MOHAMED GAMAL', '', '', 'Youssef Elsayed', '', '', 'Magdy Aly', '', '', '', '', '', 'Magdy Aly', '', '', '', '', '', 'Magdy Aly ', '', '', '', '', '', 'Magdy Aly', '', '', '', '', '', 'Magdy Aly', '', '', '', '', '', '', '', '', '', '', '']
+  Row 4: ['KW', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', ' ', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '', 'Briefs', 'Time', '']
+  Row 5: ['', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'To', '', 'From', 'to', '', 'From', 'To', '', 'From', 'to', '', 'From', 'To', '', 'From', 'to', '', 'From', 'To', '', 'From', 'to', '', 'From', 'To', '', 'From', 'to', '', 'From', 'To', '', 'From', 'to']
+
+==================================================
+SHEET: 'Handover ( Elite )' (id: 494790447)
+Rows: 1534, Columns: 9
+Headers: ['Date', 'Shift', 'Name', 'Office', 'Campaign Name', 'Illustration', 'Task', 'Priority', 'Status']
+Sample Rows:
+  Row 1: ['11-Oct', '', '', '', '', 'Morning Shift ', '', '', '']
+  Row 2: ['', '', '', '', 'Numbers ', 'Elite Ksa 👉Any Disk\nElite Kw شغال بس محتاجين حد يلنكه Rdp ', '', '', '']
+  Row 3: ['', '', 'Nada Seliman', 'KSA', 'Zuma', 'مفيش بكرا و بعده محتاجين نزود الكونفرميشن الايام اللي جاية التارجت اليوم 20 محتاجين نعمل Audit Sheet \nو معانا list محتاجين نبعت فيها ', 'Send Invitations', '', '']
+  Row 4: ['', '', 'Nada Seliman', 'KSA', 'Ilbareto', 'مفيش بكرا و بعده محتاجين نزود كونفرميشن الايام اللي جاية و معانا list محتاجين نبعت فيها ', 'Send Invitations', '', '']
+  Row 5: ['', '', 'Nada Seliman', 'KSA', 'Half Million الفزعة ', 'الحملة خلصت و الناس اللي مزارتش نوديها حملة السجنتشر', 'Read Illustration', '', '']
+
+==================================================
+SHEET: 'Audit System' (id: 1642916984)
+Rows: 772, Columns: 11
+Headers: ['', '', '', '', '', '', '', '', '', '', '']
+Sample Rows:
+  Row 1: ['Date', 'Name', 'Campaign Name', 'Office', 'Task Status', 'Sheet', 'System', 'ScreenShot', 'Start Time', 'End Time', 'Notes']
+  Row 2: ['Jan-6', 'Diana', 'Jonandvinnys - Visit - Solitare - Highest Platform- Ksa - Dec - 2025', 'KSA', 'Completed', '92', '92', 'https://drive.google.com/file/d/1EXVDuuTY2AhJnn_uglRxRoBVYhqf4Rzj/view?usp=drive_link', '', '3:35 PM', '']
+  Row 3: ['Jan-6', 'Diana', 'Zuma - Visit - Highest Platform - Ksa - Dec - 2025', 'KSA', 'Completed', '83', '83', 'https://drive.google.com/file/d/1tOUgD6Dll-S8LrOuslgRqPxb0a5AECG4/view?usp=drive_link', '', '3:41 PM', '']
+  Row 4: ['Jan-6', 'Diana', 'Jonandvinnys - Visit  - Dabab - HighestPlatform- Ksa - Dec - 2025', 'KSA', 'Completed', '102', '102', 'https://drive.google.com/file/d/1nBN4qSZvCYl9Dxwwewyc4psMbq9_TdlV/view?usp=drive_link', '', '4:41 PM', '']
+  Row 5: ['Jan-6', 'Diana', 'Jonandvinnys - Visit  - Jeddah- HighestPlatform- Ksa - Dec - 2025', 'KSA', 'Completed', '82', '82', 'https://drive.google.com/file/d/1xyT9MEJJXUTxHIoG2tgsfa_ZTXPazzpN/view?usp=drive_link', '', '5:07 PM', '']
+
