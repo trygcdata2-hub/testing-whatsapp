@@ -73,3 +73,17 @@ npx -y localtunnel --port 8501
 ```
 - **Local URL:** `http://localhost:8501`
 - **Cached Parquet Layer:** Located in `data/cached_*.parquet` for instant <50ms reloads.
+
+---
+
+## 5. GitHub Integration & Streamlit Cloud Deployment
+
+- **Remote GitHub Repository:** `https://github.com/trygcdata2-hub/testing-whatsapp`
+- **Branch:** `main`
+- **One-Click Sync Script:** `push_to_github.bat` (automatically stages, commits, and pushes to `main`).
+- **Deployment Compatibility Architecture:**
+  - `src/app.py`: Primary application source code.
+  - `project/src/app.py`: Seamless backward-compatibility forwarder bridging existing Streamlit Cloud configurations pointing to `project/src/app.py`.
+  - `app.py`: Root entrypoint bridge.
+  - Streamlit Cloud automatically listens to GitHub webhooks on `main` and refreshes the live production dashboard in real time upon every push.
+
