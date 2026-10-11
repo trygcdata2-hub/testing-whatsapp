@@ -9,6 +9,8 @@
 - **Live Chat Only:** Only roster tasks containing `'live'`, `'response'`, or `'sr.whatsapp'` qualify for message attribution. Tasks for Creation, Calling, or Monitoring are strictly excluded.
 - **Strict Neutrality on Overlap:** If two or more agents have live chat duties on the same line at the exact time of an outgoing message, the sender MUST REMAIN `'original whatsapp'`. Never guess or assign credit.
 - **End-of-Shift Fallback:** If `End Time` is missing, fallback to shift end (17:00 Morning, 01:00 next day Between, 09:00 Night).
+- **Strict Full-Duration Response Time (No Session Timeout):** Never drop, reset, or forgive delay with a 24-hour timeout if the influencer sent the last message. Every minute the influencer waited until an agent replied is real operational waiting time that must be fully measured (`reply_time - burst_start_time`).
+
 
 ## 3. Database Migration Preparedness
 - System architecture is transitioning towards querying live active campaigns and recent message time windows.

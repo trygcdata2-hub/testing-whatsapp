@@ -64,8 +64,10 @@
 ## 10. Master Business Rules & AI Model Memory (MANDATORY FOR ALL FUTURE AGENTS)
 - **Live Chat Duty Exclusive:** Outbound messages sent as `original whatsapp` can ONLY be attributed to agents whose shift task is explicitly Live Chat / Instant Response (`'live'`, `'response'`, `'sr.whatsapp'`). Non-chat tasks (Creation, Calling, Monitoring) are strictly forbidden from receiving message credit.
 - **Strict Overlap Neutrality:** If 2 or more agents have overlapping Live Chat duties on the same line at the exact time of message dispatch, the message MUST REMAIN `original whatsapp`. Never guess, split, or arbitrarily award messages.
+- **Strict Full-Duration Response Time (No Session Timeout / No Forgiveness):** If an influencer was the last sender awaiting a reply, the reply duration MUST be measured in full from the influencer's message timestamp until the agent's reply is dispatched (`reply_time - burst_start_time`), regardless of how many hours or days elapsed. Never artificially forgive, drop, or reset waiting time with a 24-hour session timeout; customer waiting time is a real operational metric and SLA breach that must be accurately exposed.
 - **System DB as the Driver:** Reconciliation NEVER treats external drives (pCloud's ~392 folders or Dropbox workbooks) as the master source of campaigns. Reconciliation ALWAYS starts from System Active Campaigns (`reference/active_campaigns.sql`) and looks outward to verify external assets.
 - **Dynamic Database Migration Direction:** Future system updates will migrate from static files (May-to-date CSVs, all-time WhatsApp messages) to bounded live SQL queries targeting strictly active campaigns and bounded recent WhatsApp windows. All code modules must accept DataFrames and remain fully decoupled from file paths to ensure zero breakage upon live SQL cutover.
+
 
 
 
