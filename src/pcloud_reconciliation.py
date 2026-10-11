@@ -435,19 +435,19 @@ def reconcile_pcloud_with_system(
                         camp_aligned += 1
                         total_aligned += 1
                         gap_type = 'Aligned'
-                        audit_res = 'Aligned (محدث بـ 7 في السيستم)'
+                        audit_res = 'Aligned (Updated to Status 7 in System)'
                     else:
                         camp_missing_7 += 1
                         total_missing_7 += 1
                         gap_type = 'Missing Status 7'
-                        audit_res = f'Missing Status 7 (مرفوع بـ pCloud وحالته بالسيستم: {st_name})'
+                        audit_res = f'Missing Status 7 (Uploaded to pCloud, System Status: {st_name})'
                 else:
                     camp_not_booked += 1
                     total_not_booked += 1
                     st_id = np.nan
                     st_name = 'Not Booked'
                     gap_type = 'Not Booked'
-                    audit_res = 'Not Booked in System (مرفوع بـ pCloud وغير مسجل بالحملة بالسيستم)'
+                    audit_res = 'Not Booked in System (Uploaded in pCloud, Not in System Campaign)'
             else:
                 camp_unknown += 1
                 total_unknown += 1
@@ -458,7 +458,7 @@ def reconcile_pcloud_with_system(
                 st_id = np.nan
                 st_name = 'Unknown'
                 gap_type = 'Unknown User'
-                audit_res = 'Unknown Influencer (يوزر غير مسجل بالسيستم)'
+                audit_res = 'Unknown Influencer (Handle not found in Influencers Master)'
 
             influencer_audit_rows.append({
                 'system_campaign_name': s_name,
@@ -478,13 +478,13 @@ def reconcile_pcloud_with_system(
 
         # Alert status
         if not p_name:
-            alert = "⚪ لم يُعثر على مجلد في pCloud"
+            alert = "⚪ No folder found in pCloud"
         elif camp_missing_7 > 0:
-            alert = f"🚨 فجوة: {camp_missing_7} مؤثر لم يُسجل بـ 7"
+            alert = f"🚨 Gap: {camp_missing_7} influencers missing Status 7"
         elif camp_aligned > 0 and camp_missing_7 == 0:
-            alert = "✅ جميع التغطيات مسجلة بـ 7"
+            alert = "✅ All coverages updated to Status 7"
         else:
-            alert = f"⚠️ {camp_not_booked} تغطية غير مسجلة بالسيستم"
+            alert = f"⚠️ {camp_not_booked} coverages not booked in system"
 
         system_campaign_rows.append({
             'system_campaign_name': s_name,

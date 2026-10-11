@@ -353,11 +353,11 @@ def reconcile_campaigns_and_influencers(
         def assign_status(row):
             d = row['Diff_Confirmations']
             if d == 0:
-                return 'Aligned (متطابق)'
+                return 'Aligned'
             elif d > 0:
-                return f'Dropbox Ahead (+{d} في الدروب بوكس)'
+                return f'Dropbox Ahead (+{d} in Dropbox)'
             else:
-                return f'System Ahead (+{abs(d)} في السيستم)'
+                return f'System Ahead (+{abs(d)} in System)'
                 
         camp_recon['Reconciliation_Status'] = camp_recon.apply(assign_status, axis=1)
     
@@ -396,7 +396,7 @@ def reconcile_campaigns_and_influencers(
                     'Dropbox Username': r['username'],
                     'Influencer Name (DB)': matched_master['influencer_name'] if matched_master else 'Not Found in Master',
                     'Phone Clean': (matched_master['phone_p1'] or matched_master['phone_p2']) if matched_master else 'N/A',
-                    'Issue': 'مسجل في الدروب بوكس ولم يُسجل كـ Confirmed في السيستم'
+                    'Issue': 'Logged in Dropbox, Missing Confirmation (status=1) in System DB'
                 })
                 
     df_dropbox_only = pd.DataFrame(dropbox_only)
