@@ -32,9 +32,10 @@
 - **Right(8) Normalization:** Normalize all phone numbers by stripping non-digits and taking the last 8 digits (`clean_phone[-8:]`). This eliminates variations in country codes (`+966`, `00966`, `966`, `+965`, `+20`, etc.), leading zeros, and formatting.
 
 ## 5. Roster Shift Attribution Rules
-- If an agent logs `Start Time` without `End Time`, assume they worked until the end of their shift (`Morning`: 17:00, `Between`: 01:00 next day, `Night`: 09:00).
+- **Live Chat Task Filtering:** Only roster records where the task is designated for Live Chat / Instant Response (`'live'`, `'response'`, or `'sr.whatsapp'` in task description) are eligible for message attribution. Tasks for creation, calls, or monitoring are strictly ignored.
+- **End-of-Shift Fallback:** If an agent logs `Start Time` without `End Time`, assume they worked until the end of their shift (`Morning`: 17:00, `Between`: 01:00 next day, `Night`: 09:00).
 - **Simultaneous Overlap Rule (Strict Fairness):** If two or more agents are logged on the same line at the exact same time, **do not guess and do not penalize/reward either agent**—keep the sender as `original whatsapp`.
-- If 1 agent is on the line, attribute to that agent. If no agent on that line, fallback to an agent assigned to `All Lines Numbers`.
+- **All Lines Numbers Fallback:** If 1 agent is on the line, attribute to that agent. If no agent is on that line, fallback to an agent assigned to `All Lines Numbers`. If multiple agents are assigned to `All Lines Numbers` at that time, keep as `original whatsapp`.
 
 ## 6. Local Dropbox Access Policy
 - **STRICT RULE:** Local Dropbox folders (`C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\...`) are **READ-ONLY**.
@@ -46,4 +47,18 @@
 - **Source Definition:** pCloud stores raw uploaded coverage media (images, videos, reels, stories) across active campaigns in KSA, UAE, KW, and EGY.
 - **Status 7 Ground Truth Rule:** An influencer with coverage uploaded to pCloud must have `campaign_influencers.status_id = 7` (Posted / Completed Coverage). Any influencer present in pCloud coverage but having `status_id != 7` represents an Operational Gap (Missing Status 7).
 - **Fast Parquet Layer:** Always read/write through `src/pcloud_reconciliation.py` and cached parquets (`data/cached_pcloud_recon_campaigns.parquet` & `data/cached_pcloud_recon_influencers.parquet`) for zero-latency UI performance and cloud deployment resilience.
+
+## 8. Active Campaigns SQL Scope & Future Migration Direction (CRITICAL)
+- **Single Source of Truth:** Active campaigns are defined strictly by the logic in `reference/active_campaigns.sql` (`c.status IN (1, 4)` or recent `(2, 6)` within 30 days, or visit date window).
+- **Driver Direction Rule:** Do **NOT** treat external directory structures (e.g., ~392 raw folders in pCloud) as the master list of active campaigns. Always drive reconciliation and monitoring from the **System Active Campaigns** outwards.
+- **Migration Preparedness:** The operational architecture is shifting towards pulling *strictly active campaigns* and bounded recent WhatsApp message streams. All pipeline modules must remain modular and filter by active campaign criteria so database migrations occur seamlessly without code breakage.
+
+## 9. Multi-Layer Campaign Matching Architecture
+- **Problem:** Campaign names differ between System DB and local drives (Dropbox/pCloud) due to token ordering (e.g., date at end vs. country at end), spacing variations, boilerplate stopwords, and regional prefixes.
+- **Mandatory 4-Tier Matching Hierarchy:**
+  1. **Strict Country Guardrail:** Never match campaigns across different country boundaries (e.g. KSA to KW or UAE).
+  2. **Core Brand Token Sorting:** Strip boilerplate stopwords (`visit`, `delivery`, `highest platform`, `approach`, etc.), clean special characters, and sort brand tokens alphabetically to neutralize token order differences (e.g., `Brand Oct KSA` == `KSA Brand Oct`).
+  3. **Month & Year Alignment:** Prevent matching campaigns with identical brand names across different operational months.
+  4. **Jaccard Token Similarity & Fuzzy Matching:** Fallback to token intersection similarity (threshold >= 0.50) to catch minor typos (e.g., `Withdrw` vs `Withdraw`).
+
 
