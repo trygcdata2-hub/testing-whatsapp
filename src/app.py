@@ -101,6 +101,7 @@ def get_cached_data():
     
     # Run pCloud Coverage vs System Status 7 Reconciliation
     pcloud_recon_data = get_cached_or_run_pcloud_reconciliation(
+        campaigns_df=campaigns_df,
         ci_df=ci_df,
         inf_master=inf_master,
         force_rescan=False
@@ -139,12 +140,17 @@ with st.sidebar:
     st.markdown(f"**Dropbox Recon:** `🟢 Active ({recon_count} Camps)`")
     st.markdown(f"**Dropbox Gaps:** `{len(data['recon_data']['dropbox_only_influencers']):,}`")
     st.divider()
-    pcloud_count = len(data['pcloud_recon']['campaign_summary'])
-    pcloud_gaps = data['pcloud_recon']['missing_7_count']
-    st.markdown(f"**pCloud Recon:** `🟢 Active ({pcloud_count} Camps)`")
-    st.markdown(f"**Status 7 Gaps:** `🚨 {pcloud_gaps:,} Missing`")
+    pcloud_matched_active = data['pcloud_recon'].get('matched_active_count', 0)
+    pcloud_active_total = data['pcloud_recon'].get('active_campaigns_count', 0)
+    st.markdown(f"**pCloud Active Recon:** `🟢 Active ({pcloud_matched_active}/{pcloud_active_total} Camps)`")
+    active_audit = data['pcloud_recon'].get('influencer_audit', pd.DataFrame())
+    if not active_audit.empty and 'is_active_campaign' in active_audit.columns:
+        active_gaps = len(active_audit[(active_audit['is_active_campaign']) & (active_audit['gap_type'] == 'Missing Status 7')])
+    else:
+        active_gaps = data['pcloud_recon'].get('missing_7_count', 0)
+    st.markdown(f"**Active Status 7 Gaps:** `🚨 {active_gaps:,} Missing`")
     st.divider()
-    st.caption("WhatsApp Pro Operations • v2.2 Multi-Source Engine")
+    st.caption("WhatsApp Pro Operations • v2.3 Active Monitor")
 
 # Header
 st.markdown('<div class="main-header">⚡ WhatsApp Pro Operations & Attribution Engine</div>', unsafe_allow_html=True)
@@ -351,26 +357,58 @@ with tab4:
     # -------------------------------------------------------------
     with sub_tab_pcloud:
         st.markdown("#### ☁️ pCloud Coverage Media vs. Official Database Status 7 Audit")
-        st.caption("Cross-examines coverage media uploaded to pCloud folders across all regions against `campaign_influencers.status_id = 7` (Posted / Completed Coverage) in the system.")
+        st.caption("يعتمد كود الـ SQL (`active_campaigns.sql`) كمصدر أساسي وحيد للحملات النشطة، ويطابق مجلدات pCloud بتقنيات الذكاء وتطابق التوكنز والبراند لاكتشاف المؤثرين أصحاب التغطيات غير المسجلين بحالة 7.")
         
         pcloud_data = data.get('pcloud_recon', {})
-        pc_summary = pcloud_data.get('campaign_summary', pd.DataFrame())
-        pc_audit = pcloud_data.get('influencer_audit', pd.DataFrame())
+        raw_summary = pcloud_data.get('campaign_summary', pd.DataFrame())
+        raw_audit = pcloud_data.get('influencer_audit', pd.DataFrame())
         
-        if not pc_summary.empty:
-            # KPI Metrics
+        if not raw_summary.empty:
+            # 1. Scope Selector: Active Campaigns Only (SQL criteria) vs All
+            s_col1, s_col2 = st.columns([2, 1])
+            with s_col1:
+                scope_choice = st.radio(
+                    "🎯 نطاق الحملات للمراقبة والمطابقة (Campaign Scope):",
+                    [
+                        "🔥 الحملات النشطة فقط (وفق معايير SQL - مستحسن)",
+                        "📋 جميع الحملات المسجلة (منذ 1 مايو)"
+                    ],
+                    horizontal=True,
+                    key="pc_scope_choice"
+                )
+            with s_col2:
+                st.caption("ℹ️ الحملات النشطة هى المشتقة من كود `active_campaigns.sql` (حالات: On going, Upcoming, On Hold).")
+                
+            is_active_scope = "الحملات النشطة فقط" in scope_choice
+            
+            # Apply scope filter
+            if is_active_scope and 'is_active_campaign' in raw_summary.columns:
+                pc_summary = raw_summary[raw_summary['is_active_campaign'] == True].copy()
+                pc_audit = raw_audit[raw_audit['is_active_campaign'] == True].copy() if not raw_audit.empty and 'is_active_campaign' in raw_audit.columns else raw_audit.copy()
+            else:
+                pc_summary = raw_summary.copy()
+                pc_audit = raw_audit.copy()
+                
+            # Dynamic KPI Metrics
+            tot_camps = len(pc_summary)
+            matched_camps = len(pc_summary[pc_summary['matched_pcloud_campaign'] != 'Not Found'])
+            tot_covs = len(pc_audit)
+            aligned_7 = len(pc_audit[pc_audit['gap_type'] == 'Aligned']) if not pc_audit.empty else 0
+            missing_7 = len(pc_audit[pc_audit['gap_type'] == 'Missing Status 7']) if not pc_audit.empty else 0
+            not_booked = len(pc_audit[pc_audit['gap_type'] == 'Not Booked']) if not pc_audit.empty else 0
+            
             pk1, pk2, pk3, pk4 = st.columns(4)
             with pk1:
-                st.metric("📁 pCloud Active Campaigns", f"{len(pc_summary):,}")
+                st.metric("📁 الحملات المشمولة بالرصد", f"{tot_camps:,}", help=f"تم مطابقة {matched_camps} حملة منها في pCloud")
             with pk2:
-                st.metric("📸 Coverage Uploads", f"{pcloud_data.get('total_coverages', len(pc_audit)):,}")
+                st.metric("📸 إجمالي التغطيات بالـ pCloud", f"{tot_covs:,}")
             with pk3:
-                st.metric("✅ Aligned (Status 7 in DB)", f"{pcloud_data.get('aligned_count', 0):,}")
+                st.metric("✅ محدثة بـ 7 في السيستم", f"{aligned_7:,}")
             with pk4:
                 st.metric(
-                    "🚨 Status 7 Gaps (Action Needed)",
-                    f"{pcloud_data.get('missing_7_count', 0):,}",
-                    help="Influencers with coverage files uploaded in pCloud, but NOT marked as Status 7 in the System Database."
+                    "🚨 فجوة: تغطيات لم تُسجل 7",
+                    f"{missing_7:,}",
+                    help="مؤثرون لديهم تغطيات مرفوعة في pCloud ولكن حالتهم في قاعدة البيانات لم تُحدث إلى 7 (Posted / Coverage)."
                 )
                 
             st.markdown("---")
@@ -378,40 +416,47 @@ with tab4:
             # Filters for Campaign Coverage Table
             p_fcol1, p_fcol2 = st.columns([1, 1])
             with p_fcol1:
-                p_regions = ['All'] + sorted(list(pc_summary['region'].dropna().unique()))
-                sel_p_region = st.selectbox("🌍 Filter by Region:", p_regions, key="pcloud_reg_filter")
+                p_countries = ['All'] + sorted([c for c in pc_summary['country'].dropna().unique() if c])
+                sel_p_country = st.selectbox("🌍 تصفية حسب الدولة (Country):", p_countries, key="pcloud_country_filter")
             with p_fcol2:
                 p_gap_filters = [
-                    "All Campaigns",
-                    "🚨 Only Campaigns with Status 7 Gaps (فجوات التغطية غير المسجلة)",
-                    "✅ Only Aligned Campaigns (المتطابقة تماماً)"
+                    "جميع الحملات",
+                    "🚨 الحملات التي بها فجوة فقط (Missing Status 7 > 0)",
+                    "✅ الحملات المتطابقة تماماً بالـ pCloud",
+                    "⚪ الحملات التي لم يُعثر على مجلد لها بالـ pCloud"
                 ]
-                sel_p_gap = st.selectbox("⚖️ Filter by Gap Alert:", p_gap_filters, key="pcloud_gap_filter")
+                sel_p_gap = st.selectbox("⚖️ تصفية حسب حالة التغطية والفجوة:", p_gap_filters, key="pcloud_gap_filter")
                 
             disp_pc_summary = pc_summary.copy()
-            if sel_p_region != 'All':
-                disp_pc_summary = disp_pc_summary[disp_pc_summary['region'] == sel_p_region]
-            if sel_p_gap == "🚨 Only Campaigns with Status 7 Gaps (فجوات التغطية غير المسجلة)":
-                disp_pc_summary = disp_pc_summary[disp_pc_summary['gap_missing_status_7'] > 0]
-            elif sel_p_gap == "✅ Only Aligned Campaigns (المتطابقة تماماً)":
-                disp_pc_summary = disp_pc_summary[(disp_pc_summary['gap_missing_status_7'] == 0) & (disp_pc_summary['aligned_status_7'] > 0)]
+            if sel_p_country != 'All':
+                disp_pc_summary = disp_pc_summary[disp_pc_summary['country'] == sel_p_country]
                 
-            st.markdown("#### 📊 Campaign Coverage Alignment Summary")
+            if sel_p_gap == "🚨 الحملات التي بها فجوة فقط (Missing Status 7 > 0)":
+                disp_pc_summary = disp_pc_summary[disp_pc_summary['gap_missing_status_7'] > 0]
+            elif sel_p_gap == "✅ الحملات المتطابقة تماماً بالـ pCloud":
+                disp_pc_summary = disp_pc_summary[(disp_pc_summary['gap_missing_status_7'] == 0) & (disp_pc_summary['aligned_status_7'] > 0)]
+            elif sel_p_gap == "⚪ الحملات التي لم يُعثر على مجلد لها بالـ pCloud":
+                disp_pc_summary = disp_pc_summary[disp_pc_summary['matched_pcloud_campaign'] == 'Not Found']
+                
+            st.markdown("#### 📊 جدول تدقيق تغطيات الحملات (System vs. pCloud)")
+            st.caption("يعرض الحملات النشطة ومطابقتها مع مجلدات pCloud وحالات الـ Status 7 الرسمية.")
+            
             disp_cols = [
-                'campaign_name', 'region', 'brand',
-                'total_pcloud_coverages', 'aligned_status_7',
-                'gap_missing_status_7', 'gap_not_booked', 'status_alert'
+                'system_campaign_name', 'country', 'system_status',
+                'matched_pcloud_campaign', 'total_pcloud_coverages',
+                'aligned_status_7', 'gap_missing_status_7', 'status_alert'
             ]
+            
             st.dataframe(
                 disp_pc_summary[disp_cols].rename(columns={
-                    'campaign_name': 'Campaign Name',
-                    'region': 'Region',
-                    'brand': 'Brand',
-                    'total_pcloud_coverages': 'pCloud Coverages',
-                    'aligned_status_7': 'Status 7 in System',
-                    'gap_missing_status_7': 'Missing Status 7 (Gap)',
-                    'gap_not_booked': 'Not Booked in System',
-                    'status_alert': 'Alert Status'
+                    'system_campaign_name': 'اسم الحملة بالسيستم',
+                    'country': 'الدولة',
+                    'system_status': 'حالة الحملة',
+                    'matched_pcloud_campaign': 'مجلد pCloud المطابق',
+                    'total_pcloud_coverages': 'تغطيات pCloud',
+                    'aligned_status_7': 'محدث 7 بالسيستم',
+                    'gap_missing_status_7': 'فجوة (لم يسجل 7)',
+                    'status_alert': 'حالة التدقيق'
                 }),
                 use_container_width=True,
                 height=350
@@ -420,41 +465,40 @@ with tab4:
             st.markdown("---")
             
             # Influencer-level Drill-down
-            st.markdown("#### 🔍 Influencer Coverage Audit (Actionable List for Status 7 Updates)")
-            st.caption("Inspect individual influencers who posted coverage in pCloud but whose status has not been marked as 7 in the system.")
+            st.markdown("#### 🔍 فحص تفصيلي للمؤثرين (Actionable List for Status 7 Updates)")
+            st.caption("قائمة بأسماء المؤثرين أصحاب التغطيات الذين يحتاجون إلى تعديل حالتهم فوراً إلى 7 في قاعدة البيانات.")
             
             if not pc_audit.empty:
-                # Campaigns with gaps priority
-                gapped_camps = sorted(list(pc_audit[pc_audit['gap_type'] == 'Missing Status 7']['campaign_name'].dropna().unique()))
-                all_camps_list = sorted(list(pc_audit['campaign_name'].dropna().unique()))
-                camp_choices = ["-- All Campaigns with Status 7 Gaps --"] + gapped_camps + ["-- All Other Campaigns --"] + [c for c in all_camps_list if c not in gapped_camps]
+                gapped_camps = sorted(list(pc_audit[pc_audit['gap_type'] == 'Missing Status 7']['system_campaign_name'].dropna().unique()))
+                all_camps_list = sorted(list(pc_audit['system_campaign_name'].dropna().unique()))
+                camp_choices = ["-- جميع الحملات التي بها فجوات Status 7 --"] + gapped_camps + ["-- باقي الحملات --"] + [c for c in all_camps_list if c not in gapped_camps]
                 
-                sel_inf_camp = st.selectbox("Select Campaign to inspect influencers:", camp_choices, key="pc_inf_select")
+                sel_inf_camp = st.selectbox("اختر الحملة لفحص مؤثرينها:", camp_choices, key="pc_inf_select")
                 
                 disp_inf = pc_audit.copy()
-                if sel_inf_camp == "-- All Campaigns with Status 7 Gaps --":
+                if sel_inf_camp == "-- جميع الحملات التي بها فجوات Status 7 --":
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Missing Status 7']
-                elif sel_inf_camp != "-- All Other Campaigns --":
-                    disp_inf = disp_inf[disp_inf['campaign_name'] == sel_inf_camp]
+                elif sel_inf_camp != "-- باقي الحملات --":
+                    disp_inf = disp_inf[disp_inf['system_campaign_name'] == sel_inf_camp]
                     
                 # Radio filter for gap types
                 r_f1, r_f2 = st.columns([1, 1])
                 with r_f1:
                     filter_gap_mode = st.radio(
-                        "Audit Filter:",
+                        "نوع السجلات المعروضة:",
                         [
-                            "🚨 Missing Status 7 Only (خلل: لم يسجل 7)",
-                            "All Records (جميع التغطيات)",
-                            "⚠️ Not Booked Only (غير مسجل بالحملة)"
+                            "🚨 فجوة لم تُسجل 7 فقط (Actionable Gaps)",
+                            "جميع التغطيات (All Records)",
+                            "⚠️ غير مسجل بالحملة بالسيستم (Not Booked)"
                         ],
                         horizontal=True
                     )
                 with r_f2:
-                    search_txt = st.text_input("🔎 Search by Username or Name:", "", key="pc_inf_search")
+                    search_txt = st.text_input("🔎 بحث باليوزر أو اسم المؤثر:", "", key="pc_inf_search")
                     
-                if filter_gap_mode == "🚨 Missing Status 7 Only (خلل: لم يسجل 7)":
+                if filter_gap_mode == "🚨 فجوة لم تُسجل 7 فقط (Actionable Gaps)":
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Missing Status 7']
-                elif filter_gap_mode == "⚠️ Not Booked Only (غير مسجل بالحملة)":
+                elif filter_gap_mode == "⚠️ غير مسجل بالحملة بالسيستم (Not Booked)":
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Not Booked']
                     
                 if search_txt.strip():
@@ -468,17 +512,17 @@ with tab4:
                 disp_inf['Masked WA'] = disp_inf['whats_number'].apply(lambda p: str(p)[:-4] + '****' if pd.notna(p) and len(str(p)) > 4 else '')
                 
                 audit_display_cols = [
-                    'campaign_name', 'region', 'username_clean', 'influencer_name',
+                    'system_campaign_name', 'country', 'username_clean', 'influencer_name',
                     'Masked Phone', 'Masked WA', 'system_status_name', 'reconciliation_status'
                 ]
                 st.dataframe(
                     disp_inf[audit_display_cols].rename(columns={
-                        'campaign_name': 'Campaign',
-                        'region': 'Region',
-                        'username_clean': 'Handle / Folder',
-                        'influencer_name': 'Influencer Name',
-                        'system_status_name': 'Current DB Status',
-                        'reconciliation_status': 'Audit Result'
+                        'system_campaign_name': 'الحملة بالسيستم',
+                        'country': 'الدولة',
+                        'username_clean': 'اليوزر / مجلد pCloud',
+                        'influencer_name': 'اسم المؤثر',
+                        'system_status_name': 'الحالة الحالية بالسيستم',
+                        'reconciliation_status': 'نتيجة التدقيق'
                     }),
                     use_container_width=True,
                     height=350
@@ -487,11 +531,13 @@ with tab4:
                 # Download CSV
                 csv_bytes = disp_inf.to_csv(index=False).encode('utf-8-sig')
                 st.download_button(
-                    label="📥 Download Actionable Status 7 Gap List (CSV)",
+                    label="📥 تنزيل القائمة الإجرائية لتحديث الـ Status 7 (CSV)",
                     data=csv_bytes,
-                    file_name=f"pcloud_status7_action_list_{datetime.now().strftime('%Y%m%d')}.csv",
+                    file_name=f"pcloud_status7_active_gaps_{datetime.now().strftime('%Y%m%d')}.csv",
                     mime="text/csv"
                 )
+        else:
+            st.info("ℹ️ No pCloud coverage records available. Make sure pCloud drive P: is connected or cached parquet is present.")
         else:
             st.info("ℹ️ No pCloud coverage records available. Make sure pCloud drive P: is connected or cached parquet is present.")
 

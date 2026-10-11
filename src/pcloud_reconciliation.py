@@ -1,5 +1,6 @@
 import os
 import re
+import difflib
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -31,6 +32,43 @@ MAX_DEPTH = 8
 COVERAGE_RE = re.compile(r'^cov(er(age)?s?|r?a?g?e?s?|\.)?$', re.IGNORECASE)
 PLATFORM_RE = re.compile(r'^(instagram|insta|ig|tiktok|tt|facebook|fb|snapchat|snap|twitter|x|youtube|yt)$', re.IGNORECASE)
 
+# Non-brand boilerplate words to ignore when comparing campaign titles
+STOPWORDS_NON_BRAND = {
+    'visit', 'delivery', 'mix', 'share', 'post', 'creation', 'campaign', 'active',
+    'highest platform', 'highestplatform', 'highist', 'highest', 'platform',
+    'approach', 'all', 'shortcut', 'lnk', 'story', 'stories', 'reel', 'reels',
+    'repost', 'ugc', 'bts', 'the', 'and', 'of', 'by', 'opening', 'event', 'barter'
+}
+
+COUNTRY_MAP = {
+    'ksa': 'KSA', 'saudi': 'KSA', 'saudi arabia': 'KSA',
+    'uae': 'UAE', 'dubai': 'UAE', 'emirates': 'UAE',
+    'kw': 'KW', 'kuwait': 'KW',
+    'egy': 'EGY', 'egypt': 'EGY',
+    'qtr': 'QTR', 'qatar': 'QTR',
+    'bh': 'BH', 'bahrain': 'BH',
+    'om': 'OM', 'oman': 'OM'
+}
+
+def extract_country(text: str) -> str:
+    """Extracts standardized 2-3 letter country code from text."""
+    s = str(text).lower()
+    for k, v in COUNTRY_MAP.items():
+        if re.search(rf'\b{k}\b', s):
+            return v
+    return ""
+
+def clean_brand_tokens(name: str) -> set:
+    """Extracts core brand words by eliminating non-brand stopwords and country tokens."""
+    s = str(name).lower()
+    words = re.findall(r"[a-z0-9]+", s)
+    return {w for w in words if w not in STOPWORDS_NON_BRAND and w not in COUNTRY_MAP and len(w) > 1}
+
+def get_brand_sort_key(name: str) -> str:
+    """Sorts brand tokens to ensure invariance against token re-ordering."""
+    tokens = clean_brand_tokens(name)
+    return "".join(sorted(tokens))
+
 def is_coverage_dir(name: str) -> bool:
     return bool(COVERAGE_RE.match(str(name).strip()))
 
@@ -56,21 +94,6 @@ def folder_contains_platform_via_users(path: str) -> bool:
         if any(is_platform_dir(g) for g in grandchildren):
             return True
     return False
-
-def get_smart_key(name: str) -> str:
-    """Canonical alphanumeric token key neutralizing case, stopwords, dates, and whitespace."""
-    if pd.isna(name) or name is None:
-        return ""
-    s = str(name).lower().strip()
-    stopwords = [
-        'tiktok', 'snapchat', 'instagram', '2026', '2025', '2024',
-        'ksa', 'kw', 'egy', 'uae', 'sep', 'oct', 'aug', 'apr', 'may', 'jun', 'jul',
-        'visit', 'delivery', 'campaign', 'active', 'highest platform', 'highestplatform', 'approach', 'all', 'shortcut'
-    ]
-    for w in stopwords:
-        s = s.replace(w, '')
-    words = re.findall(r"[a-z0-9]+", s)
-    return "".join(sorted(words))
 
 def clean_uname(val) -> str:
     """Cleans Instagram/TikTok handles by stripping spaces, @, and lowering."""
@@ -125,10 +148,7 @@ def scan_campaigns_recursive(current_path: str, root_dir: str, depth: int, found
         scan_campaigns_recursive(child_path, root_dir, depth + 1, found, results, region_name)
 
 def fast_parse_campaign_coverages(camp_path: str) -> List[Tuple[str, str]]:
-    """
-    Ultra-fast extractor of influencer coverage uploads.
-    Extracts raw_name and source_type.
-    """
+    """Ultra-fast extractor of influencer coverage uploads."""
     subs = get_subfolders(camp_path)
     cov_dirs = [s for s in subs if is_coverage_dir(s)]
     influencer_names = []
@@ -165,10 +185,7 @@ def fast_parse_campaign_coverages(camp_path: str) -> List[Tuple[str, str]]:
     return influencer_names
 
 def run_pcloud_scan() -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Full scan of pCloud directories across regions.
-    Returns (df_campaigns, df_influencers).
-    """
+    """Scans all folders in pCloud and returns (df_pcloud_camps, df_pcloud_infs)."""
     base_p = find_active_pcloud_base()
     if not base_p:
         return pd.DataFrame(), pd.DataFrame()
@@ -197,12 +214,10 @@ def run_pcloud_scan() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     for c in all_camps:
         raw_infs = fast_parse_campaign_coverages(c['campaign_path'])
-        sk = get_smart_key(c['campaign_name'])
         camp_rows.append({
             'campaign_name': c['campaign_name'],
             'region': c['region'],
             'brand': c['brand'],
-            'smart_key': sk,
             'pcloud_coverage_count': len(raw_infs),
             'campaign_path': c['campaign_path']
         })
@@ -211,7 +226,6 @@ def run_pcloud_scan() -> Tuple[pd.DataFrame, pd.DataFrame]:
                 'campaign_name': c['campaign_name'],
                 'region': c['region'],
                 'brand': c['brand'],
-                'smart_key': sk,
                 'raw_name': raw_name,
                 'username_clean': clean_uname(raw_name),
                 'source_type': source_type
@@ -219,20 +233,79 @@ def run_pcloud_scan() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     return pd.DataFrame(camp_rows), pd.DataFrame(inf_rows)
 
+def match_system_campaign_to_pcloud(
+    s_name: str,
+    s_country: str,
+    df_pcloud_camps: pd.DataFrame
+) -> Tuple[Optional[str], str, float, str]:
+    """
+    Matches a single System campaign against pCloud candidate folders using multi-layer token analysis:
+    1. Country Guardrail (Prevents cross-country misattribution).
+    2. Exact Brand Token Sort + Month Overlap.
+    3. Token Subset / High Jaccard Overlap (>= 0.50).
+    4. SequenceMatcher fallback.
+    Returns: (best_pcloud_campaign_name, pcloud_region, confidence_score, match_method)
+    """
+    s_tokens = clean_brand_tokens(s_name)
+    s_key = get_brand_sort_key(s_name)
+    s_months = set(re.findall(r'\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|2024|2025|2026)\b', s_name.lower()))
+
+    best_p_name = None
+    best_p_region = ""
+    best_score = 0.0
+    match_method = "Not Found in pCloud"
+
+    for _, p_row in df_pcloud_camps.iterrows():
+        p_name = p_row['campaign_name']
+        p_region = str(p_row['region']).upper()
+        p_country = extract_country(p_name) or extract_country(p_region)
+
+        # Country Guardrail: If both have a detected country, they must match!
+        if s_country and p_country and s_country != p_country:
+            continue
+
+        p_tokens = clean_brand_tokens(p_name)
+        p_key = get_brand_sort_key(p_name)
+        p_months = set(re.findall(r'\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|2024|2025|2026)\b', p_name.lower()))
+        month_overlap = len(s_months.intersection(p_months)) if s_months and p_months else 0
+
+        # Case 1: Exact Brand Token Sort + Month Overlap
+        if s_key and s_key == p_key and month_overlap > 0:
+            return p_name, p_row['region'], 1.0 + month_overlap * 0.1, "Exact Brand & Date"
+
+        # Case 2: High Jaccard similarity on core brand tokens
+        if s_tokens and p_tokens:
+            inter = len(s_tokens.intersection(p_tokens))
+            union = len(s_tokens.union(p_tokens))
+            jacc = inter / union if union else 0
+            score = jacc + (month_overlap * 0.15)
+            if jacc >= 0.50 and score > best_score:
+                best_p_name = p_name
+                best_p_region = p_row['region']
+                best_score = score
+                match_method = f"Jaccard ({jacc:.2f})"
+
+    return best_p_name, best_p_region, best_score, match_method
+
 def reconcile_pcloud_with_system(
+    campaigns_df: pd.DataFrame,
     df_pcloud_camps: pd.DataFrame,
     df_pcloud_infs: pd.DataFrame,
     ci_df: pd.DataFrame,
     inf_master: pd.DataFrame
 ) -> Dict[str, Any]:
     """
-    Reconciles pCloud coverage uploads with the System Database.
-    Identifies influencers who uploaded coverage in pCloud but are NOT marked status=7 in system.
+    PRIMARY GROUND TRUTH RECONCILIATION:
+    Driven by System Active Campaigns (from SQL / campaigns_df).
+    Matches each system campaign against pCloud and audits Coverage Media vs System Status 7.
     """
-    if df_pcloud_infs.empty:
+    if campaigns_df.empty or df_pcloud_camps.empty:
         return {
             'campaign_summary': pd.DataFrame(),
             'influencer_audit': pd.DataFrame(),
+            'total_campaigns': len(campaigns_df),
+            'active_campaigns_count': 0,
+            'matched_active_count': 0,
             'total_coverages': 0,
             'aligned_count': 0,
             'missing_7_count': 0,
@@ -240,12 +313,7 @@ def reconcile_pcloud_with_system(
             'unknown_users_count': 0
         }
 
-    # Prepare DB lookups
-    ci_work = ci_df.copy()
-    if 'smart_key' not in ci_work.columns and 'campaign_name' in ci_work.columns:
-        ci_work['smart_key'] = ci_work['campaign_name'].apply(get_smart_key)
-
-    # 1. Influencer lookup by username
+    # 1. Prepare Master Influencers Lookup
     user_to_info = {}
     for _, r in inf_master.iterrows():
         iid = r['influencer_id']
@@ -258,113 +326,161 @@ def reconcile_pcloud_with_system(
                 if u and u not in user_to_info:
                     user_to_info[u] = {'id': iid, 'name': name, 'phone': phone, 'wa': wa}
 
-    # 2. Fast booking lookup: (smart_key, influencer_id) -> status_id
-    booking_lookup = {}
-    for _, r in ci_work.iterrows():
-        k = (r['smart_key'], r['influencer_id'])
-        if k not in booking_lookup:
-            booking_lookup[k] = r['status_id']
-
-    # 3. Match pCloud coverages
-    recon_records = []
-    aligned_count = 0
-    missing_7_count = 0
-    not_booked_count = 0
-    unknown_users_count = 0
-
+    # 2. Group pCloud influencers by pCloud campaign_name
+    pcloud_infs_by_camp = {}
     for _, r in df_pcloud_infs.iterrows():
-        u = r['username_clean']
-        sk = r['smart_key']
+        cn = r['campaign_name']
+        if cn not in pcloud_infs_by_camp:
+            pcloud_infs_by_camp[cn] = []
+        pcloud_infs_by_camp[cn].append(r)
+
+    # 3. Iterate over System Campaigns as the Driving Source
+    system_campaign_rows = []
+    influencer_audit_rows = []
+    
+    total_aligned = 0
+    total_missing_7 = 0
+    total_not_booked = 0
+    total_unknown = 0
+    matched_active = 0
+    active_count = 0
+
+    for _, s_row in campaigns_df.iterrows():
+        s_name = s_row['Campaign Name']
+        s_country = str(s_row.get('Country', '')).upper()
+        if s_country in ['EGYPT']: s_country = 'EGY'
+        if not s_country or s_country == 'UNKNOWN':
+            s_country = extract_country(s_name)
+            
+        s_status = str(s_row.get('status', ''))
+        s_dash_status = str(s_row.get('Dashboard_Status', ''))
         
-        info = user_to_info.get(u, None)
-        if info:
-            iid = info['id']
-            name = info['name']
-            phone = info['phone']
-            wa = info['wa']
-            
-            status_id = booking_lookup.get((sk, iid), None)
-            if status_id is not None:
-                status_name = STATUS_MAP.get(status_id, f"Status {status_id}")
-                if status_id == 7:
-                    aligned_count += 1
-                    recon_status = 'Aligned (محدث بـ 7 بالسيستم)'
-                    gap_type = 'Aligned'
+        # Ground Truth Rule: Active campaign determination matching active_campaigns.sql
+        is_active = (
+            s_status in ['On going', 'Upcoming', 'On Hold', '1', '4', '6'] or
+            'Active' in s_dash_status or 'Valid' in s_dash_status
+        )
+        if is_active:
+            active_count += 1
+
+        # Match against pCloud candidate folders
+        p_name, p_region, score, method = match_system_campaign_to_pcloud(s_name, s_country, df_pcloud_camps)
+        if is_active and p_name:
+            matched_active += 1
+
+        p_infs = pcloud_infs_by_camp.get(p_name, []) if p_name else []
+
+        # Fast bookings lookup for this system campaign
+        ci_this_camp = ci_df[ci_df['campaign_name'].str.lower() == s_name.lower()]
+        camp_booking_lookup = dict(zip(ci_this_camp['influencer_id'], ci_this_camp['status_id']))
+
+        camp_aligned = 0
+        camp_missing_7 = 0
+        camp_not_booked = 0
+        camp_unknown = 0
+
+        for inf_r in p_infs:
+            u = inf_r['username_clean']
+            info = user_to_info.get(u, None)
+
+            if info:
+                iid = info['id']
+                name = info['name']
+                phone = info['phone']
+                wa = info['wa']
+
+                if iid in camp_booking_lookup:
+                    st_id = camp_booking_lookup[iid]
+                    st_name = STATUS_MAP.get(st_id, f"Status {st_id}")
+                    if st_id == 7:
+                        camp_aligned += 1
+                        total_aligned += 1
+                        gap_type = 'Aligned'
+                        audit_res = 'Aligned (محدث بـ 7 في السيستم)'
+                    else:
+                        camp_missing_7 += 1
+                        total_missing_7 += 1
+                        gap_type = 'Missing Status 7'
+                        audit_res = f'Missing Status 7 (مرفوع بـ pCloud وحالته بالسيستم: {st_name})'
                 else:
-                    missing_7_count += 1
-                    recon_status = f'Missing Status 7 (مرفوع بـ pCloud وحالته بالسيستم: {status_name})'
-                    gap_type = 'Missing Status 7'
+                    camp_not_booked += 1
+                    total_not_booked += 1
+                    st_id = np.nan
+                    st_name = 'Not Booked'
+                    gap_type = 'Not Booked'
+                    audit_res = 'Not Booked in System (مرفوع بـ pCloud وغير مسجل بالحملة بالسيستم)'
             else:
-                not_booked_count += 1
-                status_id = np.nan
-                status_name = "Not Booked"
-                recon_status = 'Not Booked in System (مرفوع بـ pCloud وغير مسجل بالحملة بالسيستم)'
-                gap_type = 'Not Booked'
+                camp_unknown += 1
+                total_unknown += 1
+                iid = np.nan
+                name = inf_r['raw_name']
+                phone = ''
+                wa = ''
+                st_id = np.nan
+                st_name = 'Unknown'
+                gap_type = 'Unknown User'
+                audit_res = 'Unknown Influencer (يوزر غير مسجل بالسيستم)'
+
+            influencer_audit_rows.append({
+                'system_campaign_name': s_name,
+                'pcloud_campaign_name': p_name,
+                'is_active_campaign': is_active,
+                'country': s_country,
+                'username_clean': u,
+                'influencer_name': name,
+                'phone': phone,
+                'whats_number': wa,
+                'system_status_id': st_id,
+                'system_status_name': st_name,
+                'gap_type': gap_type,
+                'reconciliation_status': audit_res,
+                'source_type': inf_r.get('source_type', 'Folder')
+            })
+
+        # Alert status
+        if not p_name:
+            alert = "⚪ لم يُعثر على مجلد في pCloud"
+        elif camp_missing_7 > 0:
+            alert = f"🚨 فجوة: {camp_missing_7} مؤثر لم يُسجل بـ 7"
+        elif camp_aligned > 0 and camp_missing_7 == 0:
+            alert = "✅ جميع التغطيات مسجلة بـ 7"
         else:
-            unknown_users_count += 1
-            iid = np.nan
-            name = r['raw_name']
-            phone = ''
-            wa = ''
-            status_id = np.nan
-            status_name = "Unknown User"
-            recon_status = 'Unknown Influencer (يوزر غير مسجل بقاعدة البيانات)'
-            gap_type = 'Unknown User'
-            
-        recon_records.append({
-            'campaign_name': r['campaign_name'],
-            'region': r['region'],
-            'brand': r['brand'],
-            'smart_key': sk,
-            'username_clean': u,
-            'raw_name': r['raw_name'],
-            'influencer_id': iid,
-            'influencer_name': name,
-            'phone': phone,
-            'whats_number': wa,
-            'system_status_id': status_id,
-            'system_status_name': status_name,
-            'gap_type': gap_type,
-            'reconciliation_status': recon_status,
-            'source_type': r.get('source_type', 'Folder')
+            alert = f"⚠️ {camp_not_booked} تغطية غير مسجلة بالسيستم"
+
+        system_campaign_rows.append({
+            'system_campaign_name': s_name,
+            'country': s_country,
+            'system_status': s_status,
+            'is_active_campaign': is_active,
+            'matched_pcloud_campaign': p_name or 'Not Found',
+            'pcloud_region': p_region,
+            'match_method': method,
+            'total_pcloud_coverages': len(p_infs),
+            'aligned_status_7': camp_aligned,
+            'gap_missing_status_7': camp_missing_7,
+            'gap_not_booked': camp_not_booked,
+            'unknown_users': camp_unknown,
+            'status_alert': alert
         })
 
-    df_recon = pd.DataFrame(recon_records)
-
-    # Campaign aggregation
-    camp_agg = df_recon.groupby(['campaign_name', 'region', 'brand', 'smart_key']).agg(
-        total_pcloud_coverages=('username_clean', 'count'),
-        aligned_status_7=('gap_type', lambda x: (x == 'Aligned').sum()),
-        gap_missing_status_7=('gap_type', lambda x: (x == 'Missing Status 7').sum()),
-        gap_not_booked=('gap_type', lambda x: (x == 'Not Booked').sum()),
-        unknown_users=('gap_type', lambda x: (x == 'Unknown User').sum())
-    ).reset_index()
-
-    camp_agg['total_gaps'] = camp_agg['gap_missing_status_7'] + camp_agg['gap_not_booked']
-
-    def assign_camp_alert(row):
-        if row['gap_missing_status_7'] > 0:
-            return f"🚨 خلل: {row['gap_missing_status_7']} مؤثر لم يُسجل بـ 7"
-        elif row['gap_not_booked'] > 0:
-            return f"⚠️ {row['gap_not_booked']} تغطية غير مسجلة بالسيستم"
-        elif row['aligned_status_7'] > 0:
-            return "✅ جميع التغطيات محدثة بـ 7"
-        else:
-            return "ℹ️ يوزرات غير مسجلة بالسيستم"
-
-    camp_agg['status_alert'] = camp_agg.apply(assign_camp_alert, axis=1)
+    df_camp_summary = pd.DataFrame(system_campaign_rows)
+    df_inf_audit = pd.DataFrame(influencer_audit_rows)
 
     return {
-        'campaign_summary': camp_agg,
-        'influencer_audit': df_recon,
-        'total_coverages': len(df_recon),
-        'aligned_count': aligned_count,
-        'missing_7_count': missing_7_count,
-        'not_booked_count': not_booked_count,
-        'unknown_users_count': unknown_users_count
+        'campaign_summary': df_camp_summary,
+        'influencer_audit': df_inf_audit,
+        'total_campaigns': len(df_camp_summary),
+        'active_campaigns_count': active_count,
+        'matched_active_count': matched_active,
+        'total_coverages': len(df_inf_audit),
+        'aligned_count': total_aligned,
+        'missing_7_count': total_missing_7,
+        'not_booked_count': total_not_booked,
+        'unknown_users_count': total_unknown
     }
 
 def get_cached_or_run_pcloud_reconciliation(
+    campaigns_df: pd.DataFrame,
     ci_df: pd.DataFrame,
     inf_master: pd.DataFrame,
     force_rescan: bool = False
@@ -377,11 +493,11 @@ def get_cached_or_run_pcloud_reconciliation(
         try:
             df_camps = pd.read_parquet(CACHE_PCLOUD_CAMPAIGNS)
             df_infs = pd.read_parquet(CACHE_PCLOUD_INFLUENCERS)
-            return reconcile_pcloud_with_system(df_camps, df_infs, ci_df, inf_master)
+            return reconcile_pcloud_with_system(campaigns_df, df_camps, df_infs, ci_df, inf_master)
         except Exception:
             pass
 
-    # Fresh scan
+    # Fresh scan of local pCloud drive
     df_camps, df_infs = run_pcloud_scan()
 
     if not df_camps.empty and not df_infs.empty:
@@ -391,4 +507,4 @@ def get_cached_or_run_pcloud_reconciliation(
         except Exception:
             pass
 
-    return reconcile_pcloud_with_system(df_camps, df_infs, ci_df, inf_master)
+    return reconcile_pcloud_with_system(campaigns_df, df_camps, df_infs, ci_df, inf_master)
