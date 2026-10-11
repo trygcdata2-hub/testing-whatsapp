@@ -61,4 +61,11 @@
   3. **Month & Year Alignment:** Prevent matching campaigns with identical brand names across different operational months.
   4. **Jaccard Token Similarity & Fuzzy Matching:** Fallback to token intersection similarity (threshold >= 0.50) to catch minor typos (e.g., `Withdrw` vs `Withdraw`).
 
+## 10. Master Business Rules & AI Model Memory (MANDATORY FOR ALL FUTURE AGENTS)
+- **Live Chat Duty Exclusive:** Outbound messages sent as `original whatsapp` can ONLY be attributed to agents whose shift task is explicitly Live Chat / Instant Response (`'live'`, `'response'`, `'sr.whatsapp'`). Non-chat tasks (Creation, Calling, Monitoring) are strictly forbidden from receiving message credit.
+- **Strict Overlap Neutrality:** If 2 or more agents have overlapping Live Chat duties on the same line at the exact time of message dispatch, the message MUST REMAIN `original whatsapp`. Never guess, split, or arbitrarily award messages.
+- **System DB as the Driver:** Reconciliation NEVER treats external drives (pCloud's ~392 folders or Dropbox workbooks) as the master source of campaigns. Reconciliation ALWAYS starts from System Active Campaigns (`reference/active_campaigns.sql`) and looks outward to verify external assets.
+- **Dynamic Database Migration Direction:** Future system updates will migrate from static files (May-to-date CSVs, all-time WhatsApp messages) to bounded live SQL queries targeting strictly active campaigns and bounded recent WhatsApp windows. All code modules must accept DataFrames and remain fully decoupled from file paths to ensure zero breakage upon live SQL cutover.
+
+
 
