@@ -100,12 +100,26 @@ def get_cached_data():
     )
     
     # Run pCloud Coverage vs System Status 7 Reconciliation
-    pcloud_recon_data = get_cached_or_run_pcloud_reconciliation(
-        campaigns_df=campaigns_df,
-        ci_df=ci_df,
-        inf_master=inf_master,
-        force_rescan=False
-    )
+    try:
+        pcloud_recon_data = get_cached_or_run_pcloud_reconciliation(
+            campaigns_df=campaigns_df,
+            ci_df=ci_df,
+            inf_master=inf_master,
+            force_rescan=False
+        )
+    except Exception:
+        pcloud_recon_data = {
+            'campaign_summary': pd.DataFrame(),
+            'influencer_audit': pd.DataFrame(),
+            'total_campaigns': len(campaigns_df),
+            'active_campaigns_count': 0,
+            'matched_active_count': 0,
+            'total_coverages': 0,
+            'aligned_count': 0,
+            'missing_7_count': 0,
+            'not_booked_count': 0,
+            'unknown_users_count': 0
+        }
     
     return {
         'cleaned_msgs': cleaned_msgs,

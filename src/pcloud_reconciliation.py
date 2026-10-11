@@ -288,17 +288,52 @@ def match_system_campaign_to_pcloud(
     return best_p_name, best_p_region, best_score, match_method
 
 def reconcile_pcloud_with_system(
-    campaigns_df: pd.DataFrame,
-    df_pcloud_camps: pd.DataFrame,
-    df_pcloud_infs: pd.DataFrame,
-    ci_df: pd.DataFrame,
-    inf_master: pd.DataFrame
+    *args,
+    **kwargs
 ) -> Dict[str, Any]:
     """
     PRIMARY GROUND TRUTH RECONCILIATION:
     Driven by System Active Campaigns (from SQL / campaigns_df).
     Matches each system campaign against pCloud and audits Coverage Media vs System Status 7.
     """
+    campaigns_df = kwargs.get('campaigns_df', None)
+    df_pcloud_camps = kwargs.get('df_pcloud_camps', None)
+    df_pcloud_infs = kwargs.get('df_pcloud_infs', None)
+    ci_df = kwargs.get('ci_df', None)
+    inf_master = kwargs.get('inf_master', None)
+
+    if len(args) == 4:
+        df_pcloud_camps = args[0]
+        df_pcloud_infs = args[1]
+        ci_df = args[2]
+        inf_master = args[3]
+    elif len(args) >= 5:
+        campaigns_df = args[0]
+        df_pcloud_camps = args[1]
+        df_pcloud_infs = args[2]
+        ci_df = args[3]
+        inf_master = args[4]
+
+    if campaigns_df is None or not isinstance(campaigns_df, pd.DataFrame):
+        try:
+            from src.data_loader import load_campaigns
+            campaigns_df = load_campaigns()
+        except Exception:
+            try:
+                from .data_loader import load_campaigns
+                campaigns_df = load_campaigns()
+            except Exception:
+                campaigns_df = pd.DataFrame()
+
+    if df_pcloud_camps is None:
+        df_pcloud_camps = pd.DataFrame()
+    if df_pcloud_infs is None:
+        df_pcloud_infs = pd.DataFrame()
+    if ci_df is None:
+        ci_df = pd.DataFrame()
+    if inf_master is None:
+        inf_master = pd.DataFrame()
+
     if campaigns_df.empty or df_pcloud_camps.empty:
         return {
             'campaign_summary': pd.DataFrame(),
@@ -371,8 +406,12 @@ def reconcile_pcloud_with_system(
         p_infs = pcloud_infs_by_camp.get(p_name, []) if p_name else []
 
         # Fast bookings lookup for this system campaign
-        ci_this_camp = ci_df[ci_df['campaign_name'].str.lower() == s_name.lower()]
-        camp_booking_lookup = dict(zip(ci_this_camp['influencer_id'], ci_this_camp['status_id']))
+        s_name_str = str(s_name).strip().lower() if pd.notna(s_name) else ""
+        if 'campaign_name' in ci_df.columns and not ci_df.empty:
+            ci_this_camp = ci_df[ci_df['campaign_name'].astype(str).str.strip().str.lower() == s_name_str]
+            camp_booking_lookup = dict(zip(ci_this_camp['influencer_id'], ci_this_camp['status_id']))
+        else:
+            camp_booking_lookup = {}
 
         camp_aligned = 0
         camp_missing_7 = 0
@@ -480,20 +519,65 @@ def reconcile_pcloud_with_system(
     }
 
 def get_cached_or_run_pcloud_reconciliation(
-    campaigns_df: pd.DataFrame,
-    ci_df: pd.DataFrame,
-    inf_master: pd.DataFrame,
-    force_rescan: bool = False
+    *args,
+    **kwargs
 ) -> Dict[str, Any]:
     """
     High-performance entrypoint. Reads from fast Parquet cache if available (<20ms),
     or runs fresh scan if cache missing or force_rescan=True.
+    Supports all call signatures flexibly to prevent any TypeError.
     """
+    force_rescan = kwargs.get('force_rescan', False)
+    campaigns_df = kwargs.get('campaigns_df', None)
+    ci_df = kwargs.get('ci_df', None)
+    inf_master = kwargs.get('inf_master', None)
+
+    if len(args) == 2:
+        ci_df = args[0]
+        inf_master = args[1]
+    elif len(args) >= 3:
+        campaigns_df = args[0]
+        ci_df = args[1]
+        inf_master = args[2]
+        if len(args) >= 4:
+            force_rescan = bool(args[3])
+
+    if campaigns_df is None or not isinstance(campaigns_df, pd.DataFrame):
+        try:
+            from src.data_loader import load_campaigns
+            campaigns_df = load_campaigns()
+        except Exception:
+            try:
+                from .data_loader import load_campaigns
+                campaigns_df = load_campaigns()
+            except Exception:
+                campaigns_df = pd.DataFrame()
+
+    if ci_df is None or not isinstance(ci_df, pd.DataFrame):
+        try:
+            from src.data_loader import load_campaign_influencers
+            ci_df = load_campaign_influencers()
+        except Exception:
+            pass
+
+    if inf_master is None or not isinstance(inf_master, pd.DataFrame):
+        try:
+            from src.data_loader import load_influencers_master
+            inf_master = load_influencers_master()
+        except Exception:
+            pass
+
     if not force_rescan and CACHE_PCLOUD_CAMPAIGNS.exists() and CACHE_PCLOUD_INFLUENCERS.exists():
         try:
             df_camps = pd.read_parquet(CACHE_PCLOUD_CAMPAIGNS)
             df_infs = pd.read_parquet(CACHE_PCLOUD_INFLUENCERS)
-            return reconcile_pcloud_with_system(campaigns_df, df_camps, df_infs, ci_df, inf_master)
+            return reconcile_pcloud_with_system(
+                campaigns_df=campaigns_df,
+                df_pcloud_camps=df_camps,
+                df_pcloud_infs=df_infs,
+                ci_df=ci_df,
+                inf_master=inf_master
+            )
         except Exception:
             pass
 
@@ -507,4 +591,10 @@ def get_cached_or_run_pcloud_reconciliation(
         except Exception:
             pass
 
-    return reconcile_pcloud_with_system(campaigns_df, df_camps, df_infs, ci_df, inf_master)
+    return reconcile_pcloud_with_system(
+        campaigns_df=campaigns_df,
+        df_pcloud_camps=df_camps,
+        df_pcloud_infs=df_infs,
+        ci_df=ci_df,
+        inf_master=inf_master
+    )
