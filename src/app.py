@@ -538,8 +538,6 @@ with tab4:
                 )
         else:
             st.info("ℹ️ No pCloud coverage records available. Make sure pCloud drive P: is connected or cached parquet is present.")
-        else:
-            st.info("ℹ️ No pCloud coverage records available. Make sure pCloud drive P: is connected or cached parquet is present.")
 
     # -------------------------------------------------------------
     # SUB-TAB 2: Dropbox Reconciliation
