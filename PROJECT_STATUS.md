@@ -39,16 +39,26 @@ This repository is an operational analytics and audit intelligence system connec
   - **34** active campaigns matched between Dropbox and System DB.
   - **2,649** discrepant influencers identified (confirmed in Dropbox but missing `status=1` in System DB).
 
-### C. Live Operations Dashboard (`src/app.py`)
+### C. pCloud Coverage vs. Status 7 Reconciliation Engine (`src/pcloud_reconciliation.py`)
+- **New Operational Data Source:** pCloud coverage repository (`P:\Operation - Head Office\Coverages-Final\...`).
+- **Scanned Scope:** 392 active campaigns scanned across KSA, UAE, KW, and EGY; **16,293** coverage upload records extracted.
+- **Status 7 Audit Rule:** Influencers who uploaded coverage files to pCloud MUST have `campaign_influencers.status_id = 7` (Posted / Completed Coverage).
+- **Audit Findings:**
+  - **Aligned:** **637** influencers uploaded coverage and are properly marked `status=7` in the database.
+  - **CRITICAL OPERATIONAL GAP (Missing Status 7):** **239** influencers uploaded coverage to pCloud but their status in the database was NOT updated to 7! (Top affected campaigns: `Society by Sofleur` (93), `Dr.Scent` (66), `dopeamine` (19), `brunch & cake` (14), `Table To` (11)).
+  - **Not Booked in System:** **12,995** coverages uploaded in pCloud without booking records in `campaign_influencers.csv` (older campaigns or external bookings).
+- **Fast Caching Layer:** `data/cached_pcloud_recon_campaigns.parquet` (31 KB) & `data/cached_pcloud_recon_influencers.parquet` (214 KB).
+
+### D. Live Operations Dashboard (`src/app.py`)
 - Built with Streamlit, Plotly, and responsive dark-mode CSS cards.
 - **Tab 1: Live Pulse & Alerts:** Unanswered conversations (Dynamic rule: Influencer sent last), SLA distribution (<15m, 15-60m, >60m).
 - **Tab 2: Agent Scorecards & KPIs:** Agent response volumes, median reply times, shift attribution status banner.
 - **Tab 3: Influencer Intelligence:** Official database status breakdown, flakers & missed visits audit.
-- **Tab 4: Campaign Health & Dropbox Reconciliation:**
-  - Campaign-level comparison (Target vs Sys Confirms vs Drop Confirms vs Gap).
-  - Influencer audit drill-down (shows influencers confirmed in Dropbox but missing in System, with masked phone and DB match).
+- **Tab 4: Multi-Source Reconciliation (pCloud & Dropbox):**
+  - **Sub-Tab 1 (pCloud Coverage Audit):** 4 KPI summary cards, campaign coverage status table, influencer audit drill-down with filters (Missing 7, Not Booked), search, and one-click CSV export for operational teams.
+  - **Sub-Tab 2 (Dropbox Reconciliation):** Campaign-level comparison (Target vs Sys Confirms vs Drop Confirms vs Gap) and influencer audit drill-down.
 - **Tab 5: Line Health & Infrastructure Status:** WhatsApp lines inventory and monitoring.
-- **Sidebar:** Dynamic operational controls with instant cache-clearing (`🔄 Force Reload / Clear Cache`).
+- **Sidebar:** Dynamic operational controls with instant cache-clearing (`🔄 Force Reload / Clear Cache`), showing live counts for Roster, Dropbox, and pCloud gaps.
 
 ---
 

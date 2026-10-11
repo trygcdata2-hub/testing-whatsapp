@@ -40,3 +40,10 @@
 - **STRICT RULE:** Local Dropbox folders (`C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\...`) are **READ-ONLY**.
 - **NEVER** write, modify, delete, or create files inside the Dropbox directory.
 - Use `src/reconciliation.py` and the cached parquet layer for lightning-fast reads.
+
+## 7. Local pCloud Access & Coverage Status 7 Audit Policy
+- **STRICT RULE:** Local pCloud folders (`P:\Operation - Head Office\Coverages-Final\...` or `P:\pCloud Drive\...`) are **READ-ONLY**. Never mutate or write to pCloud.
+- **Source Definition:** pCloud stores raw uploaded coverage media (images, videos, reels, stories) across active campaigns in KSA, UAE, KW, and EGY.
+- **Status 7 Ground Truth Rule:** An influencer with coverage uploaded to pCloud must have `campaign_influencers.status_id = 7` (Posted / Completed Coverage). Any influencer present in pCloud coverage but having `status_id != 7` represents an Operational Gap (Missing Status 7).
+- **Fast Parquet Layer:** Always read/write through `src/pcloud_reconciliation.py` and cached parquets (`data/cached_pcloud_recon_campaigns.parquet` & `data/cached_pcloud_recon_influencers.parquet`) for zero-latency UI performance and cloud deployment resilience.
+
