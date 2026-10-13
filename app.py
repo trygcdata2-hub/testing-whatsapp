@@ -1067,36 +1067,61 @@ with tab4:
             if not pc_audit.empty:
                 gapped_camps = sorted(list(pc_audit[pc_audit['gap_type'] == 'Missing Status 7']['system_campaign_name'].dropna().unique()))
                 all_camps_list = sorted(list(pc_audit['system_campaign_name'].dropna().unique()))
-                camp_choices = ["-- All Campaigns with Status 7 Gaps --"] + gapped_camps + ["-- Other Campaigns --"] + [c for c in all_camps_list if c not in gapped_camps]
                 
-                sel_inf_camp = st.selectbox("Select Campaign for Influencer Drill-down:", camp_choices, key="pc_inf_select")
+                # Campaign selector choices
+                camp_choices = [
+                    "-- All Monitored Campaigns --",
+                    f"-- Only Campaigns with Status 7 Gaps ({len(gapped_camps)} Campaigns) --"
+                ] + all_camps_list
                 
+                sel_inf_camp = st.selectbox(
+                    "Select Campaign for Influencer Drill-down:",
+                    camp_choices,
+                    index=0,
+                    key="pc_inf_select"
+                )
+                
+                # 1. Filter by Campaign
                 disp_inf = pc_audit.copy()
-                if sel_inf_camp == "-- All Campaigns with Status 7 Gaps --":
-                    disp_inf = disp_inf[disp_inf['gap_type'] == 'Missing Status 7']
-                elif sel_inf_camp != "-- Other Campaigns --":
+                if sel_inf_camp == "-- All Monitored Campaigns --":
+                    pass  # Keep all campaigns
+                elif sel_inf_camp.startswith("-- Only Campaigns with Status 7 Gaps"):
+                    disp_inf = disp_inf[disp_inf['system_campaign_name'].isin(gapped_camps)]
+                elif sel_inf_camp in all_camps_list:
                     disp_inf = disp_inf[disp_inf['system_campaign_name'] == sel_inf_camp]
                     
+                # Dynamic counts within the selected campaign scope
+                scope_total = len(disp_inf)
+                scope_missing_7 = len(disp_inf[disp_inf['gap_type'] == 'Missing Status 7'])
+                scope_not_booked = len(disp_inf[disp_inf['gap_type'] == 'Not Booked'])
+                scope_aligned = len(disp_inf[disp_inf['gap_type'] == 'Aligned'])
+                
                 # Radio filter for gap types
-                r_f1, r_f2 = st.columns([1, 1])
+                r_f1, r_f2 = st.columns([3, 2])
                 with r_f1:
                     filter_gap_mode = st.radio(
                         "Record Type Filter:",
                         [
-                            "🚨 Missing Status 7 (Actionable Gaps)",
-                            "All Records",
-                            "⚠️ Not Booked in System"
+                            f"🚨 Missing Status 7 (Actionable Gaps) ({scope_missing_7})",
+                            f"All Records ({scope_total})",
+                            f"⚠️ Not Booked in System ({scope_not_booked})",
+                            f"✅ Aligned Status 7 ({scope_aligned})"
                         ],
                         horizontal=True
                     )
                 with r_f2:
                     search_txt = st.text_input("🔎 Search by Username or Name:", "", key="pc_inf_search")
                     
-                if filter_gap_mode == "🚨 Missing Status 7 (Actionable Gaps)":
+                # 2. Filter by Record Type
+                if filter_gap_mode.startswith("🚨 Missing Status 7"):
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Missing Status 7']
-                elif filter_gap_mode == "⚠️ Not Booked in System":
+                elif filter_gap_mode.startswith("⚠️ Not Booked in System"):
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Not Booked']
+                elif filter_gap_mode.startswith("✅ Aligned Status 7"):
+                    disp_inf = disp_inf[disp_inf['gap_type'] == 'Aligned']
+                # "All Records" leaves disp_inf as is
                     
+                # 3. Filter by Search Query
                 if search_txt.strip():
                     st_val = search_txt.strip().lower()
                     disp_inf = disp_inf[
@@ -1127,9 +1152,9 @@ with tab4:
                 # Download CSV
                 csv_bytes = disp_inf.to_csv(index=False).encode('utf-8-sig')
                 st.download_button(
-                    label="📥 Download Actionable List for Status 7 Updates (CSV)",
+                    label=f"📥 Download Filtered List ({len(disp_inf)} Influencers - CSV)",
                     data=csv_bytes,
-                    file_name=f"pcloud_status7_active_gaps_{datetime.now().strftime('%Y%m%d')}.csv",
+                    file_name=f"pcloud_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="text/csv"
                 )
         else:
