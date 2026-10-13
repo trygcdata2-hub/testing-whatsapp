@@ -30,9 +30,9 @@ st.set_page_config(
 
 # Theme State Initialization & CSS Injection
 if "theme_mode" not in st.session_state:
-    st.session_state.theme_mode = "Dark"
+    st.session_state["theme_mode"] = "Dark"
 
-is_dark = st.session_state.theme_mode == "Dark"
+is_dark = st.session_state.get("theme_mode", "Dark") == "Dark"
 
 if is_dark:
     theme_css = """
@@ -174,9 +174,7 @@ else:
     }
     """
 
-st.markdown(f"""
-<style>
-    {theme_css}
+full_css = "<style>\n" + theme_css + """
 
     .block-container {
         padding-top: 1.5rem !important;
@@ -267,7 +265,8 @@ st.markdown(f"""
         font-weight: 800 !important;
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(full_css, unsafe_allow_html=True)
 
 from src.data_loader import (
     load_raw_messages,
@@ -368,7 +367,7 @@ with st.sidebar:
         horizontal=True
     )
     if (theme_selection == "🌙 Dark Mode" and not is_dark) or (theme_selection == "☀️ Light Mode" and is_dark):
-        st.session_state.theme_mode = "Dark" if theme_selection == "🌙 Dark Mode" else "Light"
+        st.session_state["theme_mode"] = "Dark" if theme_selection == "🌙 Dark Mode" else "Light"
         st.rerun()
     st.divider()
     st.markdown("### ⚡ Operational Controls")
