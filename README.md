@@ -1,5 +1,5 @@
 # WhatsApp Operations & Influencer Attribution Engine
-### https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/
+### [https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/](https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/)
 
 An end-to-end data intelligence and operations monitoring system for WhatsApp Pro influencer campaign operations across KSA, Kuwait, UAE, and Egypt.
 
