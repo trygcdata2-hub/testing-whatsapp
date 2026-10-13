@@ -57,12 +57,39 @@ if is_dark:
         border-radius: 6px !important;
         font-weight: 600 !important;
     }
+    
+    /* Typography & Headings */
+    h1, h2, h3, h4, h5, h6 {
+        color: #F8FAFC !important;
+    }
     .main-header {
         color: #F8FAFC !important;
     }
     .sub-header {
         color: #94A3B8 !important;
     }
+    
+    /* Widget Labels & Captions (Crisp & visible at all times, no need to hover) */
+    label[data-testid="stWidgetLabel"],
+    label[data-testid="stWidgetLabel"] p,
+    label[data-testid="stWidgetLabel"] span,
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] label,
+    div[data-testid="stRadio"] label,
+    div[data-testid="stRadio"] label p,
+    div[data-testid="stRadio"] label span,
+    div[data-testid="stRadio"] p,
+    div[data-testid="stCheckbox"] label,
+    div[data-testid="stCheckbox"] label p {
+        color: #E2E8F0 !important;
+        font-weight: 500 !important;
+    }
+    [data-testid="stCaptionContainer"] p,
+    .stCaption, .stCaption p {
+        color: #94A3B8 !important;
+    }
+    
+    /* Metric Cards */
     .metric-card {
         background: #111827 !important;
         border: 1px solid #1F2937 !important;
@@ -79,6 +106,7 @@ if is_dark:
     .metric-card.card-emerald { border-top: 3px solid #10B981 !important; }
     .metric-card.card-purple { border-top: 3px solid #8B5CF6 !important; }
     
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         background: #111827 !important;
         border: 1px solid #1F2937 !important;
@@ -97,6 +125,141 @@ if is_dark:
     [data-testid="stMetricLabel"] { color: #94A3B8 !important; }
     [data-testid="stMetricValue"] { color: #F8FAFC !important; }
     
+    /* Dropdown / Selectbox / Multiselect Dark Mode Styling */
+    div[data-baseweb="select"] > div {
+        background-color: #161F30 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        color: #F8FAFC !important;
+    }
+    div[data-baseweb="select"] > div:hover {
+        border-color: #3B82F6 !important;
+    }
+    div[data-baseweb="select"] div,
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {
+        color: #F8FAFC !important;
+    }
+    div[data-baseweb="select"] svg {
+        fill: #94A3B8 !important;
+        color: #94A3B8 !important;
+    }
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
+    ul[role="listbox"] {
+        background-color: #161F30 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        color: #F8FAFC !important;
+    }
+    li[role="option"] {
+        background-color: #161F30 !important;
+        color: #F8FAFC !important;
+    }
+    li[role="option"]:hover,
+    li[role="option"][aria-selected="true"] {
+        background-color: #1E293B !important;
+        color: #60A5FA !important;
+    }
+    
+    /* Text Inputs, Search, Number Inputs */
+    div[data-baseweb="input"],
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="base-input"],
+    div[data-baseweb="base-input"] > div {
+        background-color: #161F30 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        color: #F8FAFC !important;
+    }
+    div[data-baseweb="input"] > div:focus-within,
+    div[data-baseweb="base-input"]:focus-within {
+        border-color: #3B82F6 !important;
+        box-shadow: 0 0 0 1px #3B82F6 !important;
+    }
+    div[data-baseweb="input"] input,
+    div[data-baseweb="base-input"] input,
+    div[data-baseweb="base-input"] textarea {
+        background-color: transparent !important;
+        color: #F8FAFC !important;
+        caret-color: #60A5FA !important;
+    }
+    div[data-baseweb="input"] input::placeholder,
+    div[data-baseweb="base-input"] textarea::placeholder {
+        color: #64748B !important;
+    }
+    
+    /* Buttons & Download Button Dark Mode Styling */
+    .stDownloadButton > button,
+    [data-testid="stDownloadButton"] > button,
+    .stButton > button[kind="secondary"],
+    button[kind="secondary"],
+    [data-testid="stBaseButton-secondary"] {
+        background-color: #1E293B !important;
+        border: 1px solid #334155 !important;
+        color: #F8FAFC !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.2s ease !important;
+    }
+    .stDownloadButton > button:hover,
+    [data-testid="stDownloadButton"] > button:hover,
+    .stButton > button[kind="secondary"]:hover,
+    button[kind="secondary"]:hover,
+    [data-testid="stBaseButton-secondary"]:hover {
+        background-color: #2563EB !important;
+        border-color: #3B82F6 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+        transform: translateY(-1px) !important;
+    }
+    .stDownloadButton > button p,
+    .stDownloadButton > button span,
+    .stButton > button[kind="secondary"] p,
+    .stButton > button[kind="secondary"] span {
+        color: inherit !important;
+    }
+    .stButton > button[kind="primary"],
+    button[kind="primary"],
+    [data-testid="stBaseButton-primary"] {
+        background: linear-gradient(135deg, #2563EB, #1D4ED8) !important;
+        border: 1px solid #3B82F6 !important;
+        color: #FFFFFF !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+    }
+    .stButton > button[kind="primary"]:hover,
+    button[kind="primary"]:hover,
+    [data-testid="stBaseButton-primary"]:hover {
+        background: linear-gradient(135deg, #1D4ED8, #1E40AF) !important;
+        border-color: #60A5FA !important;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45) !important;
+    }
+    
+    /* Dividers & Alerts */
+    hr, div[data-testid="stDivider"] {
+        border-color: #1E293B !important;
+    }
+    div[data-testid="stAlert"] {
+        background-color: #161F30 !important;
+        border: 1px solid #334155 !important;
+        color: #F8FAFC !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stAlert"] p {
+        color: #F8FAFC !important;
+    }
+    div[data-testid="stExpander"] {
+        background-color: #111827 !important;
+        border: 1px solid #1F2937 !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stExpander"] details summary p {
+        color: #F8FAFC !important;
+    }
+
     /* Native Dataframe styling in Dark mode */
     [data-testid="stDataFrame"] {
         filter: invert(0.92) hue-rotate(180deg);
@@ -126,12 +289,39 @@ else:
         border-radius: 6px !important;
         font-weight: 600 !important;
     }
+    
+    /* Typography & Headings */
+    h1, h2, h3, h4, h5, h6 {
+        color: #0F172A !important;
+    }
     .main-header {
         color: #0F172A !important;
     }
     .sub-header {
         color: #475569 !important;
     }
+    
+    /* Widget Labels & Captions */
+    label[data-testid="stWidgetLabel"],
+    label[data-testid="stWidgetLabel"] p,
+    label[data-testid="stWidgetLabel"] span,
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] label,
+    div[data-testid="stRadio"] label,
+    div[data-testid="stRadio"] label p,
+    div[data-testid="stRadio"] label span,
+    div[data-testid="stRadio"] p,
+    div[data-testid="stCheckbox"] label,
+    div[data-testid="stCheckbox"] label p {
+        color: #0F172A !important;
+        font-weight: 500 !important;
+    }
+    [data-testid="stCaptionContainer"] p,
+    .stCaption, .stCaption p {
+        color: #64748B !important;
+    }
+    
+    /* Metric Cards */
     .metric-card {
         background: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
@@ -148,6 +338,7 @@ else:
     .metric-card.card-emerald { border-top: 3px solid #10B981 !important; }
     .metric-card.card-purple { border-top: 3px solid #8B5CF6 !important; }
     
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         background: #F1F5F9 !important;
         border: 1px solid #E2E8F0 !important;
@@ -167,6 +358,140 @@ else:
     [data-testid="stMetricLabel"] { color: #64748B !important; }
     [data-testid="stMetricValue"] { color: #0F172A !important; }
     
+    /* Dropdown / Selectbox Light Mode Styling */
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        color: #0F172A !important;
+    }
+    div[data-baseweb="select"] > div:hover {
+        border-color: #3B82F6 !important;
+    }
+    div[data-baseweb="select"] div,
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] [data-testid="stMarkdownContainer"] p {
+        color: #0F172A !important;
+    }
+    div[data-baseweb="select"] svg {
+        fill: #64748B !important;
+        color: #64748B !important;
+    }
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
+    ul[role="listbox"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+        color: #0F172A !important;
+    }
+    li[role="option"] {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+    }
+    li[role="option"]:hover,
+    li[role="option"][aria-selected="true"] {
+        background-color: #F1F5F9 !important;
+        color: #2563EB !important;
+    }
+    
+    /* Text Inputs, Search, Number Inputs */
+    div[data-baseweb="input"],
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="base-input"],
+    div[data-baseweb="base-input"] > div {
+        background-color: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        color: #0F172A !important;
+    }
+    div[data-baseweb="input"] > div:focus-within,
+    div[data-baseweb="base-input"]:focus-within {
+        border-color: #3B82F6 !important;
+        box-shadow: 0 0 0 1px #3B82F6 !important;
+    }
+    div[data-baseweb="input"] input,
+    div[data-baseweb="base-input"] input,
+    div[data-baseweb="base-input"] textarea {
+        background-color: transparent !important;
+        color: #0F172A !important;
+        caret-color: #2563EB !important;
+    }
+    div[data-baseweb="input"] input::placeholder,
+    div[data-baseweb="base-input"] textarea::placeholder {
+        color: #94A3B8 !important;
+    }
+    
+    /* Buttons & Download Button Light Mode */
+    .stDownloadButton > button,
+    [data-testid="stDownloadButton"] > button,
+    .stButton > button[kind="secondary"],
+    button[kind="secondary"],
+    [data-testid="stBaseButton-secondary"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        color: #0F172A !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        transition: all 0.2s ease !important;
+    }
+    .stDownloadButton > button:hover,
+    [data-testid="stDownloadButton"] > button:hover,
+    .stButton > button[kind="secondary"]:hover,
+    button[kind="secondary"]:hover,
+    [data-testid="stBaseButton-secondary"]:hover {
+        background-color: #F8FAFC !important;
+        border-color: #94A3B8 !important;
+        color: #1E293B !important;
+        transform: translateY(-1px) !important;
+    }
+    .stDownloadButton > button p,
+    .stDownloadButton > button span,
+    .stButton > button[kind="secondary"] p,
+    .stButton > button[kind="secondary"] span {
+        color: inherit !important;
+    }
+    .stButton > button[kind="primary"],
+    button[kind="primary"],
+    [data-testid="stBaseButton-primary"] {
+        background: linear-gradient(135deg, #2563EB, #1D4ED8) !important;
+        border: 1px solid #3B82F6 !important;
+        color: #FFFFFF !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+    }
+    .stButton > button[kind="primary"]:hover,
+    button[kind="primary"]:hover,
+    [data-testid="stBaseButton-primary"]:hover {
+        background: linear-gradient(135deg, #1D4ED8, #1E40AF) !important;
+        border-color: #60A5FA !important;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35) !important;
+    }
+    
+    /* Dividers & Alerts */
+    hr, div[data-testid="stDivider"] {
+        border-color: #E2E8F0 !important;
+    }
+    div[data-testid="stAlert"] {
+        background-color: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        color: #0F172A !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stAlert"] p {
+        color: #0F172A !important;
+    }
+    div[data-testid="stExpander"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stExpander"] details summary p {
+        color: #0F172A !important;
+    }
+
     /* Native Dataframe styling in Light mode */
     [data-testid="stDataFrame"] {
         border: 1px solid #E2E8F0 !important;
