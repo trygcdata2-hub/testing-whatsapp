@@ -28,29 +28,196 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling
-st.markdown("""
-<style>
-    .main-header { font-size: 2.2rem; font-weight: 700; color: #1E293B; margin-bottom: 0.2rem; }
-    .sub-header { font-size: 1.05rem; color: #64748B; margin-bottom: 1.5rem; }
-    .metric-card {
-        background: #FFFFFF;
-        border-radius: 12px;
-        padding: 1.2rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-        border: 1px solid #E2E8F0;
-        text-align: center;
+# Theme State Initialization & CSS Injection
+if "theme_mode" not in st.session_state:
+    st.session_state.theme_mode = "🌙 Dark Executive"
+
+is_dark = "Dark" in st.session_state.theme_mode
+
+if is_dark:
+    theme_css = """
+    :root {
+        --bg-main: #0B0F19;
+        --bg-card: rgba(17, 24, 39, 0.85);
+        --bg-card-hover: rgba(30, 41, 59, 0.95);
+        --text-primary: #F8FAFC;
+        --text-secondary: #94A3B8;
+        --text-muted: #64748B;
+        --border-card: rgba(255, 255, 255, 0.08);
+        --border-hover: rgba(59, 130, 246, 0.5);
+        --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+        --card-shadow-hover: 0 12px 30px -4px rgba(59, 130, 246, 0.25);
+        --header-gradient: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #F472B6 100%);
+        --sub-header-color: #94A3B8;
+        --tab-bg: rgba(17, 24, 39, 0.7);
+        --tab-border: rgba(255, 255, 255, 0.08);
+        --tab-active-bg: rgba(59, 130, 246, 0.2);
+        --tab-active-border: #3B82F6;
+        --sidebar-bg: #0F172A;
     }
-    .metric-title { font-size: 0.85rem; color: #64748B; font-weight: 600; text-transform: uppercase; }
-    .metric-value { font-size: 1.8rem; font-weight: 800; color: #0F172A; margin: 0.2rem 0; }
-    .metric-sub { font-size: 0.8rem; color: #10B981; }
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
-    .stTabs [data-baseweb="tab"] {
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        background-color: #0B0F19 !important;
+        color: #F8FAFC !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #0F172A !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+        color: #E2E8F0 !important;
+    }
+    """
+else:
+    theme_css = """
+    :root {
+        --bg-main: #F8FAFC;
+        --bg-card: #FFFFFF;
+        --bg-card-hover: #FFFFFF;
+        --text-primary: #0F172A;
+        --text-secondary: #475569;
+        --text-muted: #64748B;
+        --border-card: #E2E8F0;
+        --border-hover: rgba(59, 130, 246, 0.5);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        --card-shadow-hover: 0 12px 24px -4px rgba(59, 130, 246, 0.15);
+        --header-gradient: linear-gradient(135deg, #0F172A 0%, #1E40AF 100%);
+        --sub-header-color: #64748B;
+        --tab-bg: #F1F5F9;
+        --tab-border: #E2E8F0;
+        --tab-active-bg: #EFF6FF;
+        --tab-active-border: #3B82F6;
+        --sidebar-bg: #FFFFFF;
+    }
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        background-color: #F8FAFC !important;
+        color: #0F172A !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #E2E8F0 !important;
+    }
+    """
+
+st.markdown(f"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    {theme_css}
+
+    html, body, [class*="css"], .stMarkdown, p, div {{
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }}
+
+    .main-header {{
+        font-size: 2.3rem;
+        font-weight: 800;
+        background: var(--header-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.3rem;
+        letter-spacing: -0.02em;
+    }}
+
+    .sub-header {{
+        font-size: 1.05rem;
+        color: var(--sub-header-color);
+        margin-bottom: 1.6rem;
+        font-weight: 400;
+    }}
+
+    .metric-card {{
+        background: var(--bg-card);
+        border-radius: 14px;
+        padding: 1.25rem 1rem;
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-card);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(12px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }}
+
+    .metric-card:hover {{
+        transform: translateY(-4px);
+        border-color: var(--border-hover);
+        box-shadow: var(--card-shadow-hover);
+    }}
+
+    .metric-card.card-blue {{ border-top: 4px solid #3B82F6; }}
+    .metric-card.card-rose {{ border-top: 4px solid #EF4444; }}
+    .metric-card.card-emerald {{ border-top: 4px solid #10B981; }}
+    .metric-card.card-purple {{ border-top: 4px solid #8B5CF6; }}
+
+    .metric-title {{
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.4rem;
+    }}
+
+    .metric-value {{
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0.2rem 0;
+        letter-spacing: -0.02em;
+    }}
+
+    .metric-sub {{
+        font-size: 0.82rem;
+        font-weight: 600;
+    }}
+
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 8px;
+        background: var(--tab-bg);
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid var(--tab-border);
+    }}
+
+    .stTabs [data-baseweb="tab"] {{
         padding: 10px 20px;
         border-radius: 8px;
         font-weight: 600;
-        font-size: 0.95rem;
-    }
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }}
+
+    .stTabs [aria-selected="true"] {{
+        background: var(--tab-active-bg) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--tab-active-border) !important;
+    }}
+
+    /* Enhanced stMetric widgets */
+    [data-testid="stMetric"] {{
+        background: var(--bg-card);
+        padding: 1.1rem;
+        border-radius: 14px;
+        border: 1px solid var(--border-card);
+        box-shadow: var(--card-shadow);
+        transition: all 0.25s ease;
+    }}
+    [data-testid="stMetric"]:hover {{
+        transform: translateY(-2px);
+        border-color: var(--border-hover);
+        box-shadow: var(--card-shadow-hover);
+    }}
+    [data-testid="stMetricLabel"] {{
+        color: var(--text-muted) !important;
+        font-weight: 600 !important;
+    }}
+    [data-testid="stMetricValue"] {{
+        color: var(--text-primary) !important;
+        font-weight: 800 !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -143,6 +310,16 @@ def get_cached_data():
 data = get_cached_data()
 
 with st.sidebar:
+    st.markdown("### 🎨 Appearance & Theme")
+    theme_choice = st.radio(
+        "Theme Mode",
+        ["🌙 Dark Executive", "☀️ Clean Light"],
+        index=0 if is_dark else 1,
+        key="theme_mode",
+        label_visibility="collapsed",
+        horizontal=True
+    )
+    st.divider()
     st.markdown("### ⚡ Operational Controls")
     if st.button("🔄 Force Reload / Clear Cache", type="primary", use_container_width=True):
         st.cache_data.clear()
@@ -167,7 +344,7 @@ with st.sidebar:
         active_gaps = data['pcloud_recon'].get('missing_7_count', 0)
     st.markdown(f"**Active Status 7 Gaps:** `🚨 {active_gaps:,} Missing`")
     st.divider()
-    st.caption("WhatsApp Pro Operations • v2.3 Active Monitor")
+    st.caption("WhatsApp Pro Operations • v2.4 Active Monitor")
 
 # Header
 st.markdown('<div class="main-header">⚡ WhatsApp Pro Operations & Attribution Engine</div>', unsafe_allow_html=True)
@@ -184,37 +361,37 @@ active_campaigns_count = len(data['camp_health'])
 
 with col1:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Total Messages Stream</div>
+    <div class="metric-card card-blue">
+        <div class="metric-title">💬 Total Messages Stream</div>
         <div class="metric-value">{total_msgs:,}</div>
-        <div class="metric-sub">Cleaned & Verified Stream</div>
+        <div class="metric-sub" style="color: #3B82F6;">Cleaned & Verified Stream</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Unanswered Conversations</div>
-        <div class="metric-value">{unanswered_convs:,} <span style="font-size: 1.1rem; color: #EF4444;">({unanswered_pct}%)</span></div>
+    <div class="metric-card card-rose">
+        <div class="metric-title">⚠️ Unanswered Conversations</div>
+        <div class="metric-value">{unanswered_convs:,} <span style="font-size: 1.1rem; color: #EF4444; font-weight: 700;">({unanswered_pct}%)</span></div>
         <div class="metric-sub" style="color: #EF4444;">Dynamic Rule (Influencer sent last)</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Active Influencer Bookings</div>
+    <div class="metric-card card-emerald">
+        <div class="metric-title">👥 Active Influencer Bookings</div>
         <div class="metric-value">{active_inf_count:,}</div>
-        <div class="metric-sub">Status in (2, 7, 8, 11, 13)</div>
+        <div class="metric-sub" style="color: #10B981;">Status in (2, 7, 8, 11, 13)</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col4:
     st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-title">Active Campaigns</div>
+    <div class="metric-card card-purple">
+        <div class="metric-title">🎯 Active Campaigns</div>
         <div class="metric-value">{active_campaigns_count}</div>
-        <div class="metric-sub">Since 1 May 2026</div>
+        <div class="metric-sub" style="color: #8B5CF6;">Since 1 May 2026</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -266,6 +443,9 @@ with tab1:
         within_60 = answered_bursts['within_60m'].sum() - within_15
         over_60 = len(answered_bursts) - within_15 - within_60
         
+        plotly_template = "plotly_dark" if is_dark else "plotly_white"
+        plot_font_color = "#F8FAFC" if is_dark else "#0F172A"
+
         fig_sla = px.pie(
             values=[within_15, within_60, over_60],
             names=['< 15 Minutes (Fast)', '15 - 60 Minutes (Normal)', '> 60 Minutes (Delayed)'],
@@ -273,7 +453,14 @@ with tab1:
             color_discrete_map={'< 15 Minutes (Fast)': '#10B981', '15 - 60 Minutes (Normal)': '#F59E0B', '> 60 Minutes (Delayed)': '#EF4444'},
             hole=0.45
         )
-        fig_sla.update_layout(margin=dict(t=20, b=20, l=20, r=20), height=380)
+        fig_sla.update_layout(
+            template=plotly_template,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color=plot_font_color, family="Plus Jakarta Sans"),
+            margin=dict(t=20, b=20, l=20, r=20),
+            height=380
+        )
         st.plotly_chart(fig_sla, use_container_width=True)
 
 # -------------------------------------------------------------
@@ -313,7 +500,15 @@ with tab2:
             color_continuous_scale='Mint',
             text_auto=True
         )
-        fig_fast.update_layout(xaxis_tickangle=-45, height=350, margin=dict(t=20, b=20, l=20, r=20))
+        fig_fast.update_layout(
+            template=plotly_template,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color=plot_font_color, family="Plus Jakarta Sans"),
+            xaxis_tickangle=-45,
+            height=350,
+            margin=dict(t=20, b=20, l=20, r=20)
+        )
         st.plotly_chart(fig_fast, use_container_width=True)
         
     with col_d:
@@ -327,7 +522,15 @@ with tab2:
             color_continuous_scale='Blues',
             text_auto=True
         )
-        fig_vol.update_layout(xaxis_tickangle=-45, height=350, margin=dict(t=20, b=20, l=20, r=20))
+        fig_vol.update_layout(
+            template=plotly_template,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color=plot_font_color, family="Plus Jakarta Sans"),
+            xaxis_tickangle=-45,
+            height=350,
+            margin=dict(t=20, b=20, l=20, r=20)
+        )
         st.plotly_chart(fig_vol, use_container_width=True)
 
 # -------------------------------------------------------------
