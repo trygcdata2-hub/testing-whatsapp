@@ -36,86 +36,75 @@ is_dark = st.session_state.theme_mode == "Dark"
 
 if is_dark:
     theme_css = """
-    :root, .stApp {
-        --bg-main: #0B0F19;
-        --bg-card: #111827;
-        --bg-card-hover: #1F2937;
-        --table-header-bg: #1F2937;
-        --hover-bg: #1E293B;
-        --text-primary: #F9FAFB;
-        --text-secondary: #D1D5DB;
-        --text-muted: #9CA3AF;
-        --border-card: #374151;
-        --border-hover: #3B82F6;
-        --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
-        --card-shadow-hover: 0 10px 25px -4px rgba(59, 130, 246, 0.3);
-        --header-gradient: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #F472B6 100%);
-        --sub-header-color: #9CA3AF;
-        --tab-bg: #111827;
-        --tab-border: #374151;
-        --tab-active-bg: rgba(59, 130, 246, 0.25);
-        --tab-active-border: #3B82F6;
-        --sidebar-bg: #0F172A;
-        --background-color: #0B0F19;
-        --secondary-background-color: #111827;
-        --text-color: #F9FAFB;
-    }
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #0B0F19 !important;
-        color: #F9FAFB !important;
+        color: #F8FAFC !important;
     }
     [data-testid="stSidebar"] {
         background-color: #0F172A !important;
         border-right: 1px solid #1E293B !important;
     }
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stSidebar"] span, [data-testid="stSidebar"] div {
-        color: #E5E7EB !important;
+    [data-testid="stSidebar"] .stMarkdown p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] .stCaption {
+        color: #E2E8F0 !important;
     }
-    /* Glide Data Grid dark mode */
-    div.stDataFrame, div.stDataEditor, [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {
-        --gdg-bg-cell: #111827 !important;
-        --gdg-bg-header: #1F2937 !important;
-        --gdg-text-dark: #F9FAFB !important;
-        --gdg-text-medium: #D1D5DB !important;
-        --gdg-text-light: #9CA3AF !important;
-        --gdg-border-color: #374151 !important;
-        --gdg-accent-color: #3B82F6 !important;
-        --gdg-row-hover-bg: #1F2937 !important;
-        background-color: #111827 !important;
-        border-radius: 10px !important;
+    [data-testid="stSidebar"] code {
+        background: #1E293B !important;
+        color: #60A5FA !important;
         border: 1px solid #374151 !important;
+        padding: 2px 7px !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
     }
-    [data-testid="stDataFrame"] canvas {
-        background-color: #111827 !important;
+    .main-header {
+        color: #F8FAFC !important;
+    }
+    .sub-header {
+        color: #94A3B8 !important;
+    }
+    .metric-card {
+        background: #111827 !important;
+        border: 1px solid #1F2937 !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+    }
+    .metric-card:hover {
+        border-color: #3B82F6 !important;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25) !important;
+    }
+    .metric-title { color: #94A3B8 !important; }
+    .metric-value { color: #F8FAFC !important; }
+    .metric-card.card-blue { border-top: 3px solid #3B82F6 !important; }
+    .metric-card.card-rose { border-top: 3px solid #EF4444 !important; }
+    .metric-card.card-emerald { border-top: 3px solid #10B981 !important; }
+    .metric-card.card-purple { border-top: 3px solid #8B5CF6 !important; }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        background: #111827 !important;
+        border: 1px solid #1F2937 !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #94A3B8 !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #1E293B !important;
+        color: #F8FAFC !important;
+    }
+    [data-testid="stMetric"] {
+        background: #111827 !important;
+        border: 1px solid #1F2937 !important;
+    }
+    [data-testid="stMetricLabel"] { color: #94A3B8 !important; }
+    [data-testid="stMetricValue"] { color: #F8FAFC !important; }
+    
+    /* Native Dataframe styling in Dark mode */
+    [data-testid="stDataFrame"] {
+        filter: invert(0.92) hue-rotate(180deg);
+        border-radius: 8px !important;
     }
     """
 else:
     theme_css = """
-    :root, .stApp {
-        --bg-main: #F8FAFC;
-        --bg-card: #FFFFFF;
-        --bg-card-hover: #FFFFFF;
-        --table-header-bg: #F1F5F9;
-        --hover-bg: #F8FAFC;
-        --text-primary: #0F172A;
-        --text-secondary: #475569;
-        --text-muted: #64748B;
-        --border-card: #E2E8F0;
-        --border-hover: #3B82F6;
-        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        --card-shadow-hover: 0 10px 20px -4px rgba(59, 130, 246, 0.15);
-        --header-gradient: linear-gradient(135deg, #0F172A 0%, #1E40AF 100%);
-        --sub-header-color: #64748B;
-        --tab-bg: #F1F5F9;
-        --tab-border: #E2E8F0;
-        --tab-active-bg: #EFF6FF;
-        --tab-active-border: #3B82F6;
-        --sidebar-bg: #FFFFFF;
-        --background-color: #F8FAFC;
-        --secondary-background-color: #FFFFFF;
-        --text-color: #0F172A;
-    }
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #F8FAFC !important;
         color: #0F172A !important;
@@ -124,22 +113,64 @@ else:
         background-color: #FFFFFF !important;
         border-right: 1px solid #E2E8F0 !important;
     }
-    /* Glide Data Grid light mode */
-    div.stDataFrame, div.stDataEditor, [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {
-        --gdg-bg-cell: #FFFFFF !important;
-        --gdg-bg-header: #F1F5F9 !important;
-        --gdg-text-dark: #0F172A !important;
-        --gdg-text-medium: #475569 !important;
-        --gdg-text-light: #64748B !important;
-        --gdg-border-color: #E2E8F0 !important;
-        --gdg-accent-color: #3B82F6 !important;
-        --gdg-row-hover-bg: #F8FAFC !important;
-        background-color: #FFFFFF !important;
-        border-radius: 10px !important;
+    [data-testid="stSidebar"] .stMarkdown p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] .stCaption {
+        color: #0F172A !important;
+    }
+    [data-testid="stSidebar"] code {
+        background: #EFF6FF !important;
+        color: #1D4ED8 !important;
+        border: 1px solid #DBEAFE !important;
+        padding: 2px 7px !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+    }
+    .main-header {
+        color: #0F172A !important;
+    }
+    .sub-header {
+        color: #475569 !important;
+    }
+    .metric-card {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    }
+    .metric-card:hover {
+        border-color: #3B82F6 !important;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15) !important;
+    }
+    .metric-title { color: #64748B !important; }
+    .metric-value { color: #0F172A !important; }
+    .metric-card.card-blue { border-top: 3px solid #3B82F6 !important; }
+    .metric-card.card-rose { border-top: 3px solid #EF4444 !important; }
+    .metric-card.card-emerald { border-top: 3px solid #10B981 !important; }
+    .metric-card.card-purple { border-top: 3px solid #8B5CF6 !important; }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        background: #F1F5F9 !important;
         border: 1px solid #E2E8F0 !important;
     }
-    [data-testid="stDataFrame"] canvas {
-        background-color: #FFFFFF !important;
+    .stTabs [data-baseweb="tab"] {
+        color: #64748B !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+    }
+    [data-testid="stMetric"] {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+    }
+    [data-testid="stMetricLabel"] { color: #64748B !important; }
+    [data-testid="stMetricValue"] { color: #0F172A !important; }
+    
+    /* Native Dataframe styling in Light mode */
+    [data-testid="stDataFrame"] {
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 8px !important;
     }
     """
 
@@ -147,41 +178,30 @@ st.markdown(f"""
 <style>
     {theme_css}
 
-    html, body, [class*="css"], .stMarkdown, p, div, span, button, input {{
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif !important;
-    }}
-
-    .block-container {{
+    .block-container {
         padding-top: 1.5rem !important;
-        padding-bottom: 2rem !important;
+        padding-bottom: 2.5rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
         max-width: 1400px !important;
-    }}
+    }
 
-    .main-header {{
+    .main-header {
         font-size: 2.1rem;
         font-weight: 800;
-        background: var(--header-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
         margin-bottom: 0.2rem;
         letter-spacing: -0.02em;
-    }}
+    }
 
-    .sub-header {{
-        font-size: 0.98rem;
-        color: var(--sub-header-color);
+    .sub-header {
+        font-size: 0.95rem;
         margin-bottom: 1.4rem;
         font-weight: 400;
-    }}
+    }
 
-    .metric-card {{
-        background: var(--bg-card);
+    .metric-card {
         border-radius: 12px;
         padding: 1.1rem 0.8rem;
-        box-shadow: var(--card-shadow);
-        border: 1px solid var(--border-card);
         text-align: center;
         min-height: 120px;
         display: flex;
@@ -189,89 +209,63 @@ st.markdown(f"""
         justify-content: center;
         align-items: center;
         transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }}
+    }
 
-    .metric-card:hover {{
+    .metric-card:hover {
         transform: translateY(-3px);
-        border-color: var(--border-hover);
-        box-shadow: var(--card-shadow-hover);
-    }}
+    }
 
-    .metric-card.card-blue {{ border-top: 3px solid #3B82F6; }}
-    .metric-card.card-rose {{ border-top: 3px solid #EF4444; }}
-    .metric-card.card-emerald {{ border-top: 3px solid #10B981; }}
-    .metric-card.card-purple {{ border-top: 3px solid #8B5CF6; }}
-
-    .metric-title {{
+    .metric-title {
         font-size: 0.74rem;
-        color: var(--text-muted);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         margin-bottom: 0.3rem;
-    }}
+    }
 
-    .metric-value {{
-        font-size: 1.9rem;
+    .metric-value {
+        font-size: 2rem;
         font-weight: 800;
-        color: var(--text-primary);
         margin: 0.1rem 0;
         line-height: 1.15;
-    }}
+    }
 
-    .metric-sub {{
+    .metric-sub {
         font-size: 0.78rem;
         font-weight: 600;
         margin-top: 0.2rem;
-    }}
+    }
 
-    /* Tabs styling */
-    .stTabs [data-baseweb="tab-list"] {{
+    .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background: var(--tab-bg);
-        padding: 6px;
-        border-radius: 12px;
-        border: 1px solid var(--tab-border);
-    }}
+        padding: 5px;
+        border-radius: 10px;
+    }
 
-    .stTabs [data-baseweb="tab"] {{
-        padding: 9px 18px;
-        border-radius: 8px;
+    .stTabs [data-baseweb="tab"] {
+        padding: 8px 16px;
+        border-radius: 7px;
         font-weight: 600;
         font-size: 0.9rem;
-        color: var(--text-secondary);
-        border: 1px solid transparent;
+        border: none !important;
         transition: all 0.2s ease;
-    }}
+    }
 
-    .stTabs [aria-selected="true"] {{
-        background: var(--tab-active-bg) !important;
-        color: var(--text-primary) !important;
-        border-color: var(--tab-active-border) !important;
-    }}
-
-    /* Enhanced stMetric widgets in Tab 4 */
-    [data-testid="stMetric"] {{
-        background: var(--bg-card);
+    [data-testid="stMetric"] {
         padding: 1rem;
         border-radius: 12px;
-        border: 1px solid var(--border-card);
-        box-shadow: var(--card-shadow);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
         transition: all 0.2s ease;
-    }}
-    [data-testid="stMetric"]:hover {{
+    }
+    [data-testid="stMetric"]:hover {
         transform: translateY(-2px);
-        border-color: var(--border-hover);
-        box-shadow: var(--card-shadow-hover);
-    }}
-    [data-testid="stMetricLabel"] {{
-        color: var(--text-muted) !important;
+    }
+    [data-testid="stMetricLabel"] {
         font-weight: 600 !important;
-    }}
-    [data-testid="stMetricValue"] {{
-        color: var(--text-primary) !important;
+    }
+    [data-testid="stMetricValue"] {
         font-weight: 800 !important;
-    }}
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -365,15 +359,17 @@ data = get_cached_data()
 
 with st.sidebar:
     st.markdown("### 🎨 Display Theme")
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        if st.button("🌙 Dark Mode", use_container_width=True, type="primary" if is_dark else "secondary", key="btn_theme_dark"):
-            st.session_state.theme_mode = "Dark"
-            st.rerun()
-    with col_t2:
-        if st.button("☀️ Light Mode", use_container_width=True, type="primary" if not is_dark else "secondary", key="btn_theme_light"):
-            st.session_state.theme_mode = "Light"
-            st.rerun()
+    theme_selection = st.radio(
+        "Theme",
+        ["🌙 Dark Mode", "☀️ Light Mode"],
+        index=0 if is_dark else 1,
+        key="app_theme_selection",
+        label_visibility="collapsed",
+        horizontal=True
+    )
+    if (theme_selection == "🌙 Dark Mode" and not is_dark) or (theme_selection == "☀️ Light Mode" and is_dark):
+        st.session_state.theme_mode = "Dark" if theme_selection == "🌙 Dark Mode" else "Light"
+        st.rerun()
     st.divider()
     st.markdown("### ⚡ Operational Controls")
     if st.button("🔄 Force Reload / Clear Cache", type="primary", use_container_width=True):
