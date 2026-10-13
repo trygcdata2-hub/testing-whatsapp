@@ -511,18 +511,24 @@ else:
 full_css = "<style>\n" + theme_css + """
 
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 4.8rem !important;
         padding-bottom: 2.5rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
         max-width: 1400px !important;
     }
 
+    [data-testid="stHeader"] {
+        background: transparent !important;
+    }
+
     .main-header {
         font-size: 2.1rem;
         font-weight: 800;
+        margin-top: 0.5rem;
         margin-bottom: 0.2rem;
         letter-spacing: -0.02em;
+        line-height: 1.3;
     }
 
     .sub-header {
