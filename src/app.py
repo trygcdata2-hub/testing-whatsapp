@@ -144,20 +144,29 @@ if is_dark:
         fill: #94A3B8 !important;
         color: #94A3B8 !important;
     }
+    /* Dropdown Popover and Menu Portal Dark Mode */
     div[data-baseweb="popover"],
     div[data-baseweb="popover"] > div,
-    ul[role="listbox"] {
+    div[data-baseweb="menu"],
+    div[data-baseweb="menu"] ul,
+    div[data-baseweb="menu"] li,
+    ul[role="listbox"],
+    ul[role="listbox"] > li,
+    li[role="option"],
+    li[role="option"] > div,
+    li[role="option"] span,
+    li[role="option"] p {
         background-color: #161F30 !important;
+        color: #F8FAFC !important;
+    }
+    ul[role="listbox"] {
         border: 1px solid #334155 !important;
         border-radius: 8px !important;
-        color: #F8FAFC !important;
-    }
-    li[role="option"] {
-        background-color: #161F30 !important;
-        color: #F8FAFC !important;
     }
     li[role="option"]:hover,
-    li[role="option"][aria-selected="true"] {
+    li[role="option"][aria-selected="true"],
+    li[role="option"]:hover *,
+    li[role="option"][aria-selected="true"] * {
         background-color: #1E293B !important;
         color: #60A5FA !important;
     }
@@ -1071,7 +1080,7 @@ with tab4:
                 # Campaign selector choices
                 camp_choices = [
                     "-- All Monitored Campaigns --",
-                    f"-- Only Campaigns with Status 7 Gaps ({len(gapped_camps)} Campaigns) --"
+                    f"-- All Campaigns with Status 7 Gaps ({len(gapped_camps)} Campaigns) --"
                 ] + all_camps_list
                 
                 sel_inf_camp = st.selectbox(
@@ -1081,11 +1090,11 @@ with tab4:
                     key="pc_inf_select"
                 )
                 
-                # 1. Filter by Campaign
+                # 1. Filter by Campaign Scope
                 disp_inf = pc_audit.copy()
                 if sel_inf_camp == "-- All Monitored Campaigns --":
                     pass  # Keep all campaigns
-                elif sel_inf_camp.startswith("-- Only Campaigns with Status 7 Gaps"):
+                elif sel_inf_camp.startswith("-- All Campaigns with Status 7 Gaps"):
                     disp_inf = disp_inf[disp_inf['system_campaign_name'].isin(gapped_camps)]
                 elif sel_inf_camp in all_camps_list:
                     disp_inf = disp_inf[disp_inf['system_campaign_name'] == sel_inf_camp]
@@ -1096,28 +1105,29 @@ with tab4:
                 scope_not_booked = len(disp_inf[disp_inf['gap_type'] == 'Not Booked'])
                 scope_aligned = len(disp_inf[disp_inf['gap_type'] == 'Aligned'])
                 
-                # Radio filter for gap types
+                # Clean Radio filter without baked-in labels
                 r_f1, r_f2 = st.columns([3, 2])
                 with r_f1:
                     filter_gap_mode = st.radio(
                         "Record Type Filter:",
                         [
-                            f"🚨 Missing Status 7 (Actionable Gaps) ({scope_missing_7})",
-                            f"All Records ({scope_total})",
-                            f"⚠️ Not Booked in System ({scope_not_booked})",
-                            f"✅ Aligned Status 7 ({scope_aligned})"
+                            "🚨 Missing Status 7 (Actionable Gaps)",
+                            "All Records",
+                            "⚠️ Not Booked in System",
+                            "✅ Aligned Status 7"
                         ],
+                        key="pc_inf_record_type",
                         horizontal=True
                     )
                 with r_f2:
                     search_txt = st.text_input("🔎 Search by Username or Name:", "", key="pc_inf_search")
                     
                 # 2. Filter by Record Type
-                if filter_gap_mode.startswith("🚨 Missing Status 7"):
+                if filter_gap_mode == "🚨 Missing Status 7 (Actionable Gaps)":
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Missing Status 7']
-                elif filter_gap_mode.startswith("⚠️ Not Booked in System"):
+                elif filter_gap_mode == "⚠️ Not Booked in System":
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Not Booked']
-                elif filter_gap_mode.startswith("✅ Aligned Status 7"):
+                elif filter_gap_mode == "✅ Aligned Status 7":
                     disp_inf = disp_inf[disp_inf['gap_type'] == 'Aligned']
                 # "All Records" leaves disp_inf as is
                     
@@ -1128,6 +1138,15 @@ with tab4:
                         disp_inf['username_clean'].str.contains(st_val, na=False) |
                         disp_inf['influencer_name'].astype(str).str.lower().str.contains(st_val, na=False)
                     ]
+                
+                # Context Metrics Breakdown Banner
+                st.caption(
+                    f"📊 **Filtered Results:** Showing **{len(disp_inf):,}** influencers | "
+                    f"Selected Scope Breakdown: 🚨 Missing Status 7: **{scope_missing_7}** | "
+                    f"⚠️ Not Booked: **{scope_not_booked}** | "
+                    f"✅ Aligned: **{scope_aligned}** | "
+                    f"Total: **{scope_total:,}**"
+                )
                     
                 disp_inf['Masked Phone'] = disp_inf['phone'].apply(lambda p: str(p)[:-4] + '****' if pd.notna(p) and len(str(p)) > 4 else '')
                 disp_inf['Masked WA'] = disp_inf['whats_number'].apply(lambda p: str(p)[:-4] + '****' if pd.notna(p) and len(str(p)) > 4 else '')
