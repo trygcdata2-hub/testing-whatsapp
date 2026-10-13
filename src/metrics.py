@@ -55,7 +55,10 @@ def compute_influencer_behavior(
     status_counts = df_ci['status_id'].value_counts().to_dict()
     status_summary = []
     for s_id, count in status_counts.items():
-        name = STATUS_MAP.get(int(s_id) if str(s_id).isdigit() else s_id, f"Status {s_id}")
+        try:
+            name = STATUS_MAP.get(int(float(s_id)), f"Status {s_id}")
+        except (ValueError, TypeError):
+            name = f"Status {s_id}"
         status_summary.append({
             'Status ID': s_id,
             'Status Meaning': name,
@@ -66,7 +69,9 @@ def compute_influencer_behavior(
     df_status_summary = pd.DataFrame(status_summary).sort_values('Count', ascending=False)
     
     # Flakers: status = 3 (Missed Visit) or status = 9 (Not Delivery / Missed)
-    flakers_df = df_ci[df_ci['status_id'].isin([3, 9, 4])][['campaign_name', 'influencer_name', 'influencer_phone', 'status_id', 'booking_created_at']]
+    flaker_cols = ['campaign_name', 'influencer_name', 'influencer_phone', 'status_id', 'booking_created_at']
+    flaker_cols = [c for c in flaker_cols if c in df_ci.columns]
+    flakers_df = df_ci[df_ci['status_id'].isin([3, 9, 4])][flaker_cols]
     
     return {
         'total_bookings': total_bookings,

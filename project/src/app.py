@@ -351,9 +351,10 @@ with tab3:
         st.markdown("#### 🚫 Flakers & Missed Visits Audit")
         st.caption("Influencers with Status = 3 (Missed Visit) or Status = 9 (Missed Delivery)")
         flakers = data['inf_metrics']['flakers'].copy()
-        flakers['masked_phone'] = flakers['influencer_phone'].apply(lambda p: str(p)[:-4] + '****' if len(str(p)) > 4 else str(p))
+        flakers['masked_phone'] = flakers['influencer_phone'].apply(lambda p: str(p)[:-4] + '****' if len(str(p)) > 4 else str(p)) if 'influencer_phone' in flakers.columns else ''
+        flaker_display_cols = [c for c in ['campaign_name', 'influencer_name', 'masked_phone', 'status_id', 'booking_created_at'] if c in flakers.columns]
         st.dataframe(
-            flakers[['campaign_name', 'influencer_name', 'masked_phone', 'status_id', 'booking_created_at']],
+            flakers[flaker_display_cols],
             use_container_width=True,
             height=350
         )

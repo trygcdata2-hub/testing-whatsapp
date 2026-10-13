@@ -430,7 +430,7 @@ def reconcile_pcloud_with_system(
 
                 if iid in camp_booking_lookup:
                     st_id = camp_booking_lookup[iid]
-                    st_name = STATUS_MAP.get(st_id, f"Status {st_id}")
+                    st_name = STATUS_MAP.get(int(st_id) if pd.notna(st_id) else st_id, f"Status {st_id}")
                     if st_id == 7:
                         camp_aligned += 1
                         total_aligned += 1

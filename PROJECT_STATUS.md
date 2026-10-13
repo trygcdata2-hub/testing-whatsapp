@@ -1,34 +1,37 @@
 # WhatsApp Operations & Multi-Source Reconciliation Engine
-**Last Updated:** 2026-10-11
-**Engine Version:** v2.1 (Roster Attribution + 3-Way Dropbox/System Reconciliation)
+**Last Updated:** 2026-10-13  
+**Engine Version:** v2.4 (Production Hardened • Multi-Source Reconciliation • Zero-Crash Resilience)
 
 ---
 
 ## 1. System Overview & Current Status
 
-This repository is an operational analytics and audit intelligence system connecting three critical data streams for influencer operations:
-1. **WhatsApp Stream:** Real-time messages, conversation threads, and reply SLA metrics (`last_month_s_data.parquet`).
+This repository is an operational analytics and audit intelligence system connecting critical data streams for influencer operations:
+1. **WhatsApp Stream:** Real-time messages, conversation threads, and reply SLA metrics (`data/last_month_s_data.parquet`).
 2. **Google Sheets / Shift Roster:** Live task rosters attributing phone messages to agents during their shifts (`tasks.xlsx` & cached parquets).
 3. **System Database:** Campaigns since 1 May 2026, campaign influencer booking statuses, and influencer master directory.
 4. **Dropbox Client Sheets:** Manual campaign Excel workbooks (`Comp.` and `List` sheets) in `C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\...`.
+5. **pCloud Coverage Drive:** Raw uploaded coverage media across active campaigns in KSA, UAE, KW, and EGY in `P:\Operation - Head Office\Coverages-Final\...`.
 
 ---
 
-## 2. Core Modules Implemented
+## 2. Core Modules & Engine Breakdown
 
 ### A. Roster Shift Attribution Engine (`src/pipeline.py`)
 - **Problem Solved:** Raw outgoing phone messages sent as `original whatsapp` (~14.3k messages) lacked agent attribution.
 - **Rules Applied:**
-  - Fallback to shift end when `End Time` is missing (17:00 Morning, 01:00 next day Between, 09:00 Night).
-  - Strict Fairness Rule: Simultaneous agent overlaps on the same line at the same time remain `original whatsapp` (no guessing, no unfair penalties).
-  - Date-Indexed O(1) datetime lookup for instantaneous processing across 50k messages.
+  - **Live Chat Filtering:** Only shift tasks designated for Instant Response (`'live'`, `'response'`, or `'sr.whatsapp'`) receive message credit. Creation, Calling, and Monitoring shifts are excluded.
+  - **Shift Boundary Fallbacks:** Automatic fallback to shift end when `End Time` is missing (17:00 Morning, 01:00 next day Between, 09:00 Night).
+  - **Strict Overlap Neutrality:** Simultaneous agent overlaps on the same line at the same time remain `original whatsapp` (no guessing, no unfair penalties).
+  - **"All Lines Numbers" Assignment:** Unassigned line traffic falls back to agents on `All Lines Numbers` duty.
+  - **Date-Indexed O(1) datetime lookup** for instantaneous processing across 50k messages.
 - **Attribution Results:**
   - Total Agents recognized: Increased from **48** to **70** agents.
   - Successfully attributed: **4,784** messages reassigned to real agents.
   - Unattributed overlaps preserved: **9,554** messages remain `original whatsapp`.
 
 ### B. 3-Way Dropbox vs System Reconciliation Engine (`src/reconciliation.py`)
-- **Problem Solved:** Audits discrepancy between manual Dropbox client sheets and official System Database bookings.
+- **Problem Solved:** Audits discrepancies between manual Dropbox client sheets and official System Database bookings.
 - **Rules Applied:**
   - **Dual-Phone Fallback (XLOOKUP):** Always queries Primary Phone first, falling back to WhatsApp Number.
   - **Right(8) Phone Normalization:** Strips non-digits, extracts last 8 digits (`clean_phone[-8:]`), neutralizing international country codes (+966, 00966, +965, +20).
@@ -57,14 +60,13 @@ This repository is an operational analytics and audit intelligence system connec
   - **203** total campaigns; **164** matched; **637** aligned; **239** missing Status 7 gaps.
 - **Fast Caching Layer:** `data/cached_pcloud_recon_campaigns.parquet` (31 KB) & `data/cached_pcloud_recon_influencers.parquet` (214 KB).
 
-### D. Live Operations Dashboard (`src/app.py`)
+### D. Live Operations Dashboard (`app.py`, `src/app.py`, `project/src/app.py`)
 - Built with Streamlit, Plotly, and responsive dark-mode CSS cards.
-- **Tab 1: Live Pulse & Alerts:** Unanswered conversations (Dynamic rule: Influencer sent last), SLA distribution (<15m, 15-60m, >60m).
+- **Tab 1: Live Pulse & Alerts:** Unanswered conversations (Dynamic rule: Influencer sent last), SLA distribution (<15m, 15-60m, >60m). Full duration response time without artificial timeouts.
 - **Tab 2: Agent Scorecards & KPIs:** Agent response volumes, median reply times, shift attribution status banner.
-- **Tab 3: Influencer Intelligence:** Official database status breakdown, flakers & missed visits audit.
+- **Tab 3: Influencer Intelligence:** Official database status breakdown, flakers & missed visits audit with dynamic column handling and phone masking.
 - **Tab 4: Multi-Source Reconciliation (pCloud & Dropbox):**
-  - **Sub-Tab 1 (pCloud Coverage Audit):** Scope Selector toggle: Default is **"🔥 الحملات النشطة فقط (وفق معايير SQL - مستحسن)"** (showing the 35 active campaigns, 28 matched, 767 coverages, 403 aligned, 33 critical gaps), with full toggle to view all 203 campaigns.
-  - Drill-down table with masked phones, radio filter (Missing Status 7, Not Booked, All), search, and one-click operational CSV export: `📥 تنزيل القائمة الإجرائية لتحديث الـ Status 7 (CSV)`.
+  - **Sub-Tab 1 (pCloud Coverage Audit):** Active campaigns scope toggle (default: active campaigns under SQL criteria), drill-down table with masked phones, and one-click operational CSV export: `📥 تنزيل القائمة الإجرائية لتحديث الـ Status 7 (CSV)`.
   - **Sub-Tab 2 (Dropbox Reconciliation):** Campaign-level comparison (Target vs Sys Confirms vs Drop Confirms vs Gap) and influencer audit drill-down.
 - **Tab 5: Line Health & Infrastructure Status:** WhatsApp lines inventory and monitoring.
 - **Sidebar:** Dynamic operational controls with instant cache-clearing (`🔄 Force Reload / Clear Cache`), showing live counts for Roster, Dropbox, and pCloud gaps.
@@ -80,32 +82,36 @@ This repository is an operational analytics and audit intelligence system connec
 5. **Phone Matching:** Always use dual-column fallback (`p1` then `p2`) and `Right(8)` normalization. Over 50% of matches rely on the second column!
 6. **Active Campaigns SQL Scope & Migration Direction:** Active campaigns are driven by `reference/active_campaigns.sql` criteria. External directories (Dropbox, pCloud) are matched against System Active Campaigns, never the reverse. Future DB queries will restrict to active campaigns and recent message windows.
 7. **Roster Fairness & Live Chat Rule:** Only shifts with tasks matching `live`, `response`, or `sr.whatsapp` are eligible. If 2+ agents are simultaneously logged on the same line, message remains `original whatsapp` (no guessing, no unfair penalties).
-8. **Dynamic DB Migration Readiness:** Keep analysis functions parameterized accepting DataFrames so switching from CSV/Parquet to live SQL connections requires zero architectural changes.
+8. **Strict Full-Duration Response Time:** Response times measure from arrival to dispatch without artificial session forgiveness or 24-hour reset.
+9. **Dynamic DB Migration Readiness:** Keep analysis functions parameterized accepting DataFrames so switching from CSV/Parquet to live SQL connections requires zero architectural changes.
 
 ---
 
-## 4. How to Run Locally
+## 4. Changelog & Bug Fixes (v2.4 Audit)
+
+| Component | Issue | Fix Applied | Result |
+| :--- | :--- | :--- | :--- |
+| `src/metrics.py:58` | `int(s_id)` raised `ValueError` when status IDs contained NaN/floats | Added safe `try/except` with `int(float(s_id))` | Zero crash on missing status fields |
+| `src/metrics.py:72` | Hardcoded column selection caused `KeyError` if `booking_created_at` missing | Dynamically filters `flakers_df` by existing columns | Safe execution across all dataset schemas |
+| `app.py:354`, `src/app.py:354`, `project/src/app.py:354` | Dashboard crashed when displaying flakers table if columns were missing | Added dynamic column list checking and phone masking guardrail | Stable rendering across all 3 app entrypoints |
+| `src/pcloud_reconciliation.py:433` | Status lookup failed because `st_id` was float (e.g. `7.0`) while `STATUS_MAP` keys are ints | Added `int(st_id)` lookup cast | Status names (e.g., "Coverage") correctly displayed |
+| `README.md` | Outdated documentation referencing incomplete tasks | Rewritten comprehensively with architecture diagrams, module details, and quickstarts | Full documentation alignment |
+
+---
+
+## 5. Deployment & Execution Instructions
 
 ```bash
-# Launch Streamlit Dashboard
-python -m streamlit run src/app.py --server.headless true --server.port 8501
+# Launch Streamlit Dashboard Locally
+streamlit run app.py
 
-# Localtunnel for Public External Sharing
-npx -y localtunnel --port 8501
+# Push and Sync with GitHub / Streamlit Cloud
+push_to_github.bat
 ```
-- **Local URL:** `http://localhost:8501`
-- **Cached Parquet Layer:** Located in `data/cached_*.parquet` for instant <50ms reloads.
-
----
-
-## 5. GitHub Integration & Streamlit Cloud Deployment
 
 - **Remote GitHub Repository:** `https://github.com/trygcdata2-hub/testing-whatsapp`
 - **Branch:** `main`
-- **One-Click Sync Script:** `push_to_github.bat` (automatically stages, commits, and pushes to `main`).
-- **Deployment Compatibility Architecture:**
-  - `src/app.py`: Primary application source code.
-  - `project/src/app.py`: Seamless backward-compatibility forwarder bridging existing Streamlit Cloud configurations pointing to `project/src/app.py`.
-  - `app.py`: Root entrypoint bridge.
-  - Streamlit Cloud automatically listens to GitHub webhooks on `main` and refreshes the live production dashboard in real time upon every push.
-
+- **Entry Points Supported:**
+  - `app.py`: Root entrypoint
+  - `src/app.py`: Standard modular source
+  - `project/src/app.py`: Forwarder for Streamlit Cloud subfolder configurations
