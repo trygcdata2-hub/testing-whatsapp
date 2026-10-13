@@ -4,7 +4,7 @@
 
 An end-to-end data intelligence and operations monitoring system for WhatsApp Pro influencer campaign operations across KSA, Kuwait, UAE, and Egypt.
 
-> **Detailed System Scope & Deliverables:** See [COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md](./COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md) for full breakdown of all modules, metrics, and dashboards.
+---
 
 
 ## 📌 Project Overview
