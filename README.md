@@ -1,11 +1,11 @@
 # WhatsApp Operations & Influencer Attribution Engine
-### [https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/](https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/)
+
+### [Open the Live App](https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/)
 
 An end-to-end data intelligence and operations monitoring system for WhatsApp Pro influencer campaign operations across KSA, Kuwait, UAE, and Egypt.
 
-> **Detailed System Scope & Deliverables:** See [COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md](file:///c:/Users/DA-05/Downloads/Project/COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md) for full breakdown of all modules, metrics, and dashboards.
+> **Detailed System Scope & Deliverables:** See [COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md](./COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md) for the full breakdown of all modules, metrics, and dashboards.
 
----
 
 ## 📌 Project Overview
 
