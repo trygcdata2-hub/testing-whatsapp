@@ -1,7 +1,13 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, Any
-from .config import ACTIVE_INFLUENCER_STATUSES, STATUS_MAP
+try:
+    from .config import ACTIVE_INFLUENCER_STATUSES, STATUS_MAP
+except (ImportError, ValueError):
+    try:
+        from src.config import ACTIVE_INFLUENCER_STATUSES, STATUS_MAP
+    except (ImportError, ValueError):
+        from config import ACTIVE_INFLUENCER_STATUSES, STATUS_MAP
 
 def compute_agent_scorecards(df_bursts: pd.DataFrame, df_tasks: pd.DataFrame = None) -> pd.DataFrame:
     """

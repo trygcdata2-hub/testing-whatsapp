@@ -3,15 +3,37 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, time
 from typing import Dict, Tuple, List, Optional, Union, Any
-from .config import SHIFT_HOURS, ACTIVE_INFLUENCER_STATUSES
-from .data_loader import (
-    load_raw_messages,
-    load_whatsapp_lines,
-    load_google_sheet_tasks,
-    load_campaigns,
-    load_campaign_influencers,
-    load_influencers_master
-)
+try:
+    from .config import SHIFT_HOURS, ACTIVE_INFLUENCER_STATUSES
+    from .data_loader import (
+        load_raw_messages,
+        load_whatsapp_lines,
+        load_google_sheet_tasks,
+        load_campaigns,
+        load_campaign_influencers,
+        load_influencers_master
+    )
+except (ImportError, ValueError):
+    try:
+        from src.config import SHIFT_HOURS, ACTIVE_INFLUENCER_STATUSES
+        from src.data_loader import (
+            load_raw_messages,
+            load_whatsapp_lines,
+            load_google_sheet_tasks,
+            load_campaigns,
+            load_campaign_influencers,
+            load_influencers_master
+        )
+    except (ImportError, ValueError):
+        from config import SHIFT_HOURS, ACTIVE_INFLUENCER_STATUSES
+        from data_loader import (
+            load_raw_messages,
+            load_whatsapp_lines,
+            load_google_sheet_tasks,
+            load_campaigns,
+            load_campaign_influencers,
+            load_influencers_master
+        )
 
 TEST_ACCOUNTS = ['trainee01', 'Developers Team', 'IT Team']
 

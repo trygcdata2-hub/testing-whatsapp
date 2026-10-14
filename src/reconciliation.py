@@ -7,8 +7,11 @@ from typing import Dict, List, Tuple, Optional, Any
 
 try:
     from .config import DATA_DIR
-except ImportError:
-    from config import DATA_DIR
+except (ImportError, ValueError):
+    try:
+        from src.config import DATA_DIR
+    except (ImportError, ValueError):
+        from config import DATA_DIR
 
 CACHE_RECON_CAMPAIGNS = DATA_DIR / "cached_dropbox_recon_campaigns.parquet"
 CACHE_RECON_INFLUENCERS = DATA_DIR / "cached_dropbox_recon_influencers.parquet"

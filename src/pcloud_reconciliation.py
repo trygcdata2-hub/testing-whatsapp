@@ -8,8 +8,11 @@ from typing import Dict, List, Tuple, Optional, Any
 
 try:
     from .config import DATA_DIR, BASE_DIR, STATUS_MAP
-except ImportError:
-    from config import DATA_DIR, BASE_DIR, STATUS_MAP
+except (ImportError, ValueError):
+    try:
+        from src.config import DATA_DIR, BASE_DIR, STATUS_MAP
+    except (ImportError, ValueError):
+        from config import DATA_DIR, BASE_DIR, STATUS_MAP
 
 CACHE_PCLOUD_CAMPAIGNS = DATA_DIR / "cached_pcloud_recon_campaigns.parquet"
 CACHE_PCLOUD_INFLUENCERS = DATA_DIR / "cached_pcloud_recon_influencers.parquet"
@@ -323,7 +326,11 @@ def reconcile_pcloud_with_system(
                 from .data_loader import load_campaigns
                 campaigns_df = load_campaigns()
             except Exception:
-                campaigns_df = pd.DataFrame()
+                try:
+                    from data_loader import load_campaigns
+                    campaigns_df = load_campaigns()
+                except Exception:
+                    campaigns_df = pd.DataFrame()
 
     if df_pcloud_camps is None:
         df_pcloud_camps = pd.DataFrame()
@@ -551,21 +558,41 @@ def get_cached_or_run_pcloud_reconciliation(
                 from .data_loader import load_campaigns
                 campaigns_df = load_campaigns()
             except Exception:
-                campaigns_df = pd.DataFrame()
+                try:
+                    from data_loader import load_campaigns
+                    campaigns_df = load_campaigns()
+                except Exception:
+                    campaigns_df = pd.DataFrame()
 
     if ci_df is None or not isinstance(ci_df, pd.DataFrame):
         try:
             from src.data_loader import load_campaign_influencers
             ci_df = load_campaign_influencers()
         except Exception:
-            pass
+            try:
+                from .data_loader import load_campaign_influencers
+                ci_df = load_campaign_influencers()
+            except Exception:
+                try:
+                    from data_loader import load_campaign_influencers
+                    ci_df = load_campaign_influencers()
+                except Exception:
+                    pass
 
     if inf_master is None or not isinstance(inf_master, pd.DataFrame):
         try:
             from src.data_loader import load_influencers_master
             inf_master = load_influencers_master()
         except Exception:
-            pass
+            try:
+                from .data_loader import load_influencers_master
+                inf_master = load_influencers_master()
+            except Exception:
+                try:
+                    from data_loader import load_influencers_master
+                    inf_master = load_influencers_master()
+                except Exception:
+                    pass
 
     if not force_rescan and CACHE_PCLOUD_CAMPAIGNS.exists() and CACHE_PCLOUD_INFLUENCERS.exists():
         try:

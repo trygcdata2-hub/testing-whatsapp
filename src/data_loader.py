@@ -1,20 +1,52 @@
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
-from .config import (
-    BASE_DIR,
-    DATA_DIR,
-    WHATSAPP_DATA_PATH,
-    WHATSAPP_DATA_CSV_PATH,
-    WHATSAPP_LINES_PATH,
-    CAMPAIGNS_PATH,
-    CAMPAIGN_INFLUENCERS_PATH,
-    INFLUENCERS_MASTER_PATH,
-    SERVICE_ACCOUNT_FILE,
-    GOOGLE_SHEET_ID,
-    GOOGLE_SHEETS_SCOPES,
-    ACTIVE_INFLUENCER_STATUSES
-)
+try:
+    from .config import (
+        BASE_DIR,
+        DATA_DIR,
+        WHATSAPP_DATA_PATH,
+        WHATSAPP_DATA_CSV_PATH,
+        WHATSAPP_LINES_PATH,
+        CAMPAIGNS_PATH,
+        CAMPAIGN_INFLUENCERS_PATH,
+        INFLUENCERS_MASTER_PATH,
+        SERVICE_ACCOUNT_FILE,
+        GOOGLE_SHEET_ID,
+        GOOGLE_SHEETS_SCOPES,
+        ACTIVE_INFLUENCER_STATUSES
+    )
+except (ImportError, ValueError):
+    try:
+        from src.config import (
+            BASE_DIR,
+            DATA_DIR,
+            WHATSAPP_DATA_PATH,
+            WHATSAPP_DATA_CSV_PATH,
+            WHATSAPP_LINES_PATH,
+            CAMPAIGNS_PATH,
+            CAMPAIGN_INFLUENCERS_PATH,
+            INFLUENCERS_MASTER_PATH,
+            SERVICE_ACCOUNT_FILE,
+            GOOGLE_SHEET_ID,
+            GOOGLE_SHEETS_SCOPES,
+            ACTIVE_INFLUENCER_STATUSES
+        )
+    except (ImportError, ValueError):
+        from config import (
+            BASE_DIR,
+            DATA_DIR,
+            WHATSAPP_DATA_PATH,
+            WHATSAPP_DATA_CSV_PATH,
+            WHATSAPP_LINES_PATH,
+            CAMPAIGNS_PATH,
+            CAMPAIGN_INFLUENCERS_PATH,
+            INFLUENCERS_MASTER_PATH,
+            SERVICE_ACCOUNT_FILE,
+            GOOGLE_SHEET_ID,
+            GOOGLE_SHEETS_SCOPES,
+            ACTIVE_INFLUENCER_STATUSES
+        )
 
 def load_whatsapp_lines() -> pd.DataFrame:
     """Loads the mapping between whatsappAccId, line_name, and phone."""
