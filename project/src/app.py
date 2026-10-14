@@ -893,13 +893,13 @@ with tab2:
     if roster_rows > 0:
         st.success(f"""
         📋 **Roster Engine Active & Verified:**
-        - Applied **{roster_rows:,}** official shift duties from the tasks roster (`tasks.xlsx`).
+        - Applied **{roster_rows:,}** official shift duties from the Google Sheets roster (`Chat Team 's Tasks`).
         - Re-attributed **4,784** outgoing messages previously logged as `original whatsapp` to verified agents.
         - Active recognized agents increased from **48** to **70** agents.
         - Fairness Rule Applied: Simultaneous overlaps with multiple agents logged on the same line remain as `original whatsapp` (9,554 replies) to avoid unfair attribution.
         """)
     else:
-        st.info("ℹ️ **Roster Attribution Status:** To attribute phone messages ('original whatsapp') to individual agents, place the exported shift tasks sheet (`tasks.xlsx`) into the `data/` folder. Overlapping agent shifts remain marked as 'original whatsapp' to preserve fairness.")
+        st.info("ℹ️ **Roster Attribution Status:** To attribute phone messages ('original whatsapp') to individual agents, sync the shift tasks from Google Sheets (`Chat Team 's Tasks`) or place fallback tasks into the `data/` folder. Overlapping agent shifts remain marked as 'original whatsapp' to preserve fairness.")
         
     st.dataframe(
         data['agents_df'],
