@@ -1,8 +1,17 @@
 import os
 from pathlib import Path
 
-# Base Paths
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Base Paths - robust to running from repo root or cloud subfolder
+_resolved = Path(__file__).resolve()
+_root_candidate = _resolved.parent
+while _root_candidate != _root_candidate.parent:
+    if (_root_candidate / "data").exists() and (_root_candidate / "data" / "last_month_s_data.parquet").exists():
+        break
+    if (_root_candidate / "requirements.txt").exists():
+        break
+    _root_candidate = _root_candidate.parent
+
+BASE_DIR = _root_candidate
 DATA_DIR = BASE_DIR / "data"
 if not DATA_DIR.exists() and (BASE_DIR / "project" / "data").exists():
     DATA_DIR = BASE_DIR / "project" / "data"
@@ -20,7 +29,7 @@ DB_DOCS_PATH = DATA_DIR / "documentations for the database.xlsx"
 
 # Google Sheets Configuration (STRICTLY READ-ONLY)
 def _find_service_account_file() -> Path:
-    for search_dir in [BASE_DIR, BASE_DIR / "project"]:
+    for search_dir in [BASE_DIR, BASE_DIR / "project", Path.cwd(), Path.cwd() / "project"]:
         if search_dir.exists():
             matched = sorted(list(search_dir.glob("operations-*.json")), key=lambda p: p.stat().st_mtime, reverse=True)
             if matched:

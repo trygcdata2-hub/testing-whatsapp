@@ -4,13 +4,14 @@ from pathlib import Path
 # Add project root to sys.path for cloud deployment subfolder compatibility
 _current_dir = Path(__file__).resolve().parent
 _project_root = _current_dir
-while not (_project_root / "src" / "config.py").exists() and _project_root != _project_root.parent:
+while _project_root != _project_root.parent:
+    if (_project_root / "src" / "config.py").exists() or (_project_root / "requirements.txt").exists():
+        break
     _project_root = _project_root.parent
 
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
-if str(_project_root / "src") not in sys.path:
-    sys.path.insert(0, str(_project_root / "src"))
+for _p in [str(_project_root), str(_project_root / "src"), str(_current_dir), str(_current_dir.parent)]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import streamlit as st
 import pandas as pd
@@ -608,22 +609,42 @@ full_css = "<style>\n" + theme_css + """
 """
 st.markdown(full_css, unsafe_allow_html=True)
 
-from src.data_loader import (
-    load_raw_messages,
-    load_whatsapp_lines,
-    load_campaigns,
-    load_campaign_influencers,
-    load_influencers_master,
-    load_tasks_data
-)
-from src.pipeline import clean_messages_df, prepare_roster_df, run_conversation_analysis
-from src.metrics import (
-    compute_agent_scorecards,
-    compute_influencer_behavior,
-    compute_campaign_health
-)
-from src.reconciliation import get_cached_or_run_reconciliation
-from src.pcloud_reconciliation import get_cached_or_run_pcloud_reconciliation
+try:
+    from src.data_loader import (
+        load_raw_messages,
+        load_whatsapp_lines,
+        load_campaigns,
+        load_campaign_influencers,
+        load_influencers_master,
+        load_tasks_data,
+        sync_tasks_from_google_sheets
+    )
+    from src.pipeline import clean_messages_df, prepare_roster_df, run_conversation_analysis
+    from src.metrics import (
+        compute_agent_scorecards,
+        compute_influencer_behavior,
+        compute_campaign_health
+    )
+    from src.reconciliation import get_cached_or_run_reconciliation
+    from src.pcloud_reconciliation import get_cached_or_run_pcloud_reconciliation
+except ImportError:
+    from data_loader import (
+        load_raw_messages,
+        load_whatsapp_lines,
+        load_campaigns,
+        load_campaign_influencers,
+        load_influencers_master,
+        load_tasks_data,
+        sync_tasks_from_google_sheets
+    )
+    from pipeline import clean_messages_df, prepare_roster_df, run_conversation_analysis
+    from metrics import (
+        compute_agent_scorecards,
+        compute_influencer_behavior,
+        compute_campaign_health
+    )
+    from reconciliation import get_cached_or_run_reconciliation
+    from pcloud_reconciliation import get_cached_or_run_pcloud_reconciliation
 
 @st.cache_data(show_spinner="Loading operational data stream...")
 def get_cached_data():
@@ -716,7 +737,6 @@ with st.sidebar:
         st.rerun()
     if st.button("📥 Sync Live from Google Sheets", use_container_width=True):
         with st.spinner("Fetching latest shift roster from Google Sheets..."):
-            from src.data_loader import sync_tasks_from_google_sheets
             sync_res = sync_tasks_from_google_sheets()
             if sync_res.get("success"):
                 st.success(f"✅ Roster synced: {sync_res.get('whatsapp_tasks_rows', 0):,} WA + {sync_res.get('gc_tasks_rows', 0):,} GC rows!")
