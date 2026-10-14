@@ -610,6 +610,16 @@ full_css = "<style>\n" + theme_css + """
 st.markdown(full_css, unsafe_allow_html=True)
 
 try:
+    from src.recorder_component import inject_screen_recorder
+except ImportError:
+    try:
+        from recorder_component import inject_screen_recorder
+    except ImportError:
+        def inject_screen_recorder(): pass
+
+inject_screen_recorder()
+
+try:
     from src.data_loader import (
         load_raw_messages,
         load_whatsapp_lines,
@@ -764,7 +774,10 @@ with st.sidebar:
         active_gaps = data['pcloud_recon'].get('missing_7_count', 0)
     st.markdown(f"**Active Status 7 Gaps:** `🚨 {active_gaps:,} Missing`")
     st.divider()
-    st.caption("WhatsApp Pro Operations • v2.4 Active Monitor")
+    st.markdown("### 🎥 Screen Walkthrough Recorder")
+    st.caption("Record an interactive HD walkthrough video of the dashboard to save to your local **Downloads** folder. Click **🔴 Record Demo** at the bottom-right.")
+    st.divider()
+    st.caption("WhatsApp Pro Operations • v2.5 Active Monitor")
 
 # Header
 st.markdown('<div class="main-header">⚡ WhatsApp Pro Operations & Attribution Engine</div>', unsafe_allow_html=True)

@@ -1,0 +1,385 @@
+================================================================================
+DYNAMIC SYSTEM DATABASE REQUIREMENTS & QUERY SPECIFICATIONS
+================================================================================
+Document Version: 1.0 (Dynamic Database Architecture)
+Target Audience: Database Architect / Engineering Team / Operations BI
+Status: Ready for Custom Production SQL Insertion
+Format: UTF-8 Plain Text Specification
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. Architectural Overview & Dynamic Ingestion Strategy
+2. Database Topology (Sources & Roles)
+3. Master Business Rules & Data Integrity Standards
+4. Dataset 1: WhatsApp Raw Message Stream (WhatsApp Pro DB)
+5. Dataset 2: Official WhatsApp Lines Inventory (WhatsApp Pro DB)
+6. Dataset 3: Active Campaigns Master Summary (System Core DB)
+7. Dataset 4: Campaign Influencer Bookings & Statuses (System Core DB)
+8. Dataset 5: Influencers Master Profile Directory (System Core DB)
+9. Dataset 6 (Optional / Future): Live Shift Roster & Line Tasks
+10. Dynamic Engine Integration & Execution Guide
+
+
+================================================================================
+1. ARCHITECTURAL OVERVIEW & DYNAMIC INGESTION STRATEGY
+================================================================================
+The Operations & WhatsApp Intelligence Dashboard is transitioning from static 
+flat-file imports (CSV/Parquet snapshots) to a 100% dynamic, bounded SQL 
+ingestion pipeline.
+
+To run the entire system dynamically without breaking analytical logic, the 
+Python ETL engine (`src/pipeline.py`, `src/metrics.py`, `src/data_loader.py`, 
+`src/reconciliation.py`, and `src/pcloud_reconciliation.py`) requires specific 
+datasets with deterministic column names and types.
+
+This document outlines:
+  - Exactly WHAT data is needed and WHY it is required by the analytical engines.
+  - Recommended scope, filters, and boundary conditions for high performance.
+  - Exact column names and types expected by Pandas DataFrames in memory.
+  - Dedicated EMPTY PLACEHOLDERS where you can paste your battle-tested SQL 
+    queries that incorporate your company's proprietary tables, joins, and rules.
+
+
+================================================================================
+2. DATABASE TOPOLOGY (SOURCES & ROLES)
+================================================================================
+The platform relies on two distinct database clusters:
+
+CLUSTER A: WHATSAPP PRO DATABASE (MySQL / `Pro` DB)
+  - Role: Real-time and historical chat streams, inbound/outbound communication,
+    response speed calculations, SLA monitoring, and WhatsApp line accounts.
+  - Primary Tables: `Message`, `Room`, `Contact`, `Whatsapp`.
+
+CLUSTER B: SYSTEM CORE DATABASE (`grandcp3_temp_production` / Core App DB)
+  - Role: Business outcomes, campaign configurations, influencer booking states,
+    master profiles, and social media handles.
+  - Primary Tables: `campaigns`, `campaign_influencers`, `influencers`, 
+    `countries`, `brands`, `campaign_country_favourites(_v2)`.
+
+EXTERNAL (CURRENTLY INTEGRATED VIA API):
+  - Google Spreadsheet: Official Live Shift Roster (`Chat Team 's Tasks`) 
+    accessed read-only via Google Service Account (`gspread`).
+  - Local Drives: Dropbox & pCloud directories (Strict Read-Only file audits).
+
+
+================================================================================
+3. MASTER BUSINESS RULES & DATA INTEGRITY STANDARDS
+================================================================================
+Please ensure your SQL queries adhere to the following ground-truth rules:
+
+1. THE TWO-PHONE FALLBACK RULE (CRITICAL):
+   - Over 50% of active WhatsApp users in the system have their operational phone 
+     stored in `whats_number` rather than `phone`.
+   - In `campaign_influencers`: Must provide BOTH `influencer_phone` (primary) and 
+     `influencer_whats_number` (fallback).
+   - In `influencers`: Must provide BOTH `phone` (primary) and `whats_number` 
+     (fallback).
+   - The Python ETL engine automatically runs an XLOOKUP fallback and extracts 
+     the rightmost 8 digits (Right(8)) to eliminate country code formatting 
+     discrepancies (+966, 00966, 966, +965, +20, leading zeros, etc.).
+
+2. GROUND TRUTH FOR ACTIVE PARTICIPATION:
+   - Do NOT rely on boolean flags like `influencers.active`.
+   - Active participation is strictly defined by `campaign_influencers.status` 
+     belonging to the set (2, 7, 8, 11, 13):
+       * 2: Visited (زار)
+       * 7: Coverage Posted (عمل العملية كاملة ونزل التغطية)
+       * 8: Delivered (استلم دليفري)
+       * 11: Share Confirmed (اتسجل إنه هيعمل الشير)
+       * 13: Post Confirmed (اتسجل إنه هينزل بوست)
+
+3. COVERAGE STATUS 7 AUDIT RULE:
+   - When an influencer has media uploaded to pCloud or Dropbox, their official 
+     database status MUST be 7. Any influencer with uploaded files whose status 
+     is != 7 is flagged as an Operational Gap.
+
+4. SYSTEM DB AS THE DRIVER:
+   - Analytical reconciliation always starts from System Active Campaigns 
+     outward to external assets (pCloud/Dropbox), never the reverse.
+
+5. TIMEZONE & TIMESTAMPS:
+   - All `createdAt` and date fields should be UTC or standardized Saudi Time 
+     (`Asia/Riyadh`, UTC+3) to keep shift roster attribution perfectly synchronized.
+
+
+================================================================================
+4. DATASET 1: WHATSAPP RAW MESSAGE STREAM
+================================================================================
+Target Database: WhatsApp Pro DB (MySQL)
+ETL Destination: `df_messages` / `data/last_month_s_data.parquet` (or direct memory)
+
+A. PURPOSE & DOWNSTREAM DEPENDENCIES:
+  - Feeds Tab 1 (Live Pulse & Alerts), Tab 2 (Agent Performance), and Tab 5 (Lines).
+  - Used by `src/pipeline.py` to reconstruct conversations, message bursts, and 
+    measure customer waiting times.
+  - Attributes messages sent as `original whatsapp` to real shift agents.
+  - Detects Dynamic Unanswered chats (where influencer sent the last message).
+  - Calculates SLAs (% answered < 15 min, % answered < 60 min, median reply time).
+
+B. RECOMMENDED FILTERING & SCOPE:
+  - Time window: Bounded rolling window (e.g., `createdAt >= CURDATE() - INTERVAL 45 DAY`
+    or explicit operational date range: `2026-09-01` to current timestamp).
+  - Exclude soft-deleted messages (`deletedAt IS NULL`).
+  - Exclude system automated messages (`isSystem = 0` or != 1).
+  - Exclude internal test / admin accounts (`userName NOT IN ('trainee01', 'Developers Team', 'IT Team')`).
+  - Exclude WhatsApp group chats (`phone NOT LIKE '120363%'` and length <= 15 digits).
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name     | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+phone           | VARCHAR   | NO       | Influencer/Customer phone number (clean digits).
+content         | TEXT      | YES      | Text message body (for context/preview).
+createdAt       | DATETIME  | NO       | Exact timestamp of message dispatch/receipt.
+type            | VARCHAR   | YES      | Message type ('text', 'image', 'audio', etc.).
+isRead          | TINYINT   | YES      | Read receipt status (1 = read, 0 = unread).
+isFromMe        | VARCHAR/INT| NO      | 1 = Outbound (from company/agent), 0 = Inbound (from influencer).
+isSystem        | VARCHAR/INT| NO      | 0 = Human message, 1 = System/bot event.
+whatsappAccId   | VARCHAR/INT| NO      | ID of the WhatsApp SIM line used (FK to Whatsapp table).
+userName        | VARCHAR   | YES      | Agent name who sent it, or 'original whatsapp' if sent via phone/AnyDesk.
+isInvitation    | VARCHAR/INT| YES     | Campaign invitation flag (1/0).
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 1: WHATSAPP RAW MESSAGE STREAM]
+-- Please paste your custom, optimized SQL query for Dataset 1 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+5. DATASET 2: OFFICIAL WHATSAPP LINES INVENTORY
+================================================================================
+Target Database: WhatsApp Pro DB (MySQL)
+ETL Destination: `df_lines` / `data/whatsapp_lines.xlsx` (replacing static Excel)
+
+A. PURPOSE & DOWNSTREAM DEPENDENCIES:
+  - Feeds Tab 5 (Line Health & Infrastructure) and the Shift Roster Line Matcher.
+  - Maps `whatsappAccId` to the line's human-readable name/nickname and actual phone number.
+  - Currently loaded from `data/whatsapp_lines.xlsx`. Running this dynamically from 
+    the DB makes line management completely automated without manual spreadsheet maintenance.
+
+B. RECOMMENDED FILTERING & SCOPE:
+  - All active lines currently configured in the WhatsApp Pro system.
+  - Exclude inactive or decommissioned lines if a status column exists.
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name     | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+whatsappAccId   | VARCHAR/INT| NO      | Primary ID of the WhatsApp account (matches Message.whatsappAccId).
+line_name       | VARCHAR   | NO       | Human-readable account label (e.g. "KSA Line 01", "UAE Elite").
+phone           | VARCHAR   | NO       | The actual phone number / MSISDN of the WhatsApp line.
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 2: OFFICIAL WHATSAPP LINES INVENTORY]
+-- Please paste your custom, optimized SQL query for Dataset 2 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+6. DATASET 3: ACTIVE CAMPAIGNS MASTER SUMMARY
+================================================================================
+Target Database: System Core DB (`grandcp3_temp_production` / Core Production DB)
+ETL Destination: `df_campaigns` / `data/active_campaigns.csv` (or direct memory)
+
+A. PURPOSE & DOWNSTREAM DEPENDENCIES:
+  - Feeds Tab 4 (Campaign Health, Performance & Target Tracking).
+  - Acts as the Master Driver for both Dropbox Reconciliation (`src/reconciliation.py`) 
+    and pCloud Coverage Auditing (`src/pcloud_reconciliation.py`).
+  - Evaluates delivery/visit target fulfillment, confirmations, and missed visits.
+
+B. RECOMMENDED FILTERING & SCOPE:
+  - Driven by the logic in `reference/active_campaigns.sql`:
+    * Ongoing / Upcoming (`status IN (1, 4)`) with start dates within active operational window.
+    * Finished / On Hold (`status IN (2, 6)`) recently ended within the last 5-30 days.
+    * Exclude internal testing parent brands (`b.parent_id NOT IN (3251, 2395)`).
+    * `deleted_at IS NULL`.
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name          | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+campaign_id          | INT       | NO       | Unique Primary Key of the campaign (`c.id`).
+Campaign Name        | VARCHAR   | NO       | Official name of the campaign (`c.name`).
+status               | VARCHAR   | NO       | Standardized status label ('On going', 'Finished', 'Upcoming', 'On Hold').
+Country              | VARCHAR   | NO       | Standardized country name (e.g. 'Saudi Arabia', 'UAE', 'Kuwait', 'Egypt').
+Type                 | VARCHAR   | NO       | Campaign type ('Visit', 'Delivery', 'Mix', 'Share', 'Post Creation').
+Total List           | INT       | NO       | Total count of influencers added to campaign (`COUNT(*)` from `ci`).
+Confirmations        | INT       | NO       | Count of confirmed bookings (`status IN (1,2,3,7,8,11,13)`).
+Target               | INT       | NO       | Net target reach (`total_target_reach` minus extra targets).
+Visited              | INT       | NO       | Count of visited influencers (`status IN (2,7,8,11,13)`).
+Coverage             | INT       | NO       | Count of posted coverages (`status IN (7,11,13)`).
+Missing_coverage     | INT       | NO       | Visited/delivered but no coverage yet (`status IN (2,8)`).
+missed_visit         | INT       | NO       | Influencers who missed visit/delivery (`status IN (3,9)`).
+Approved             | INT       | NO       | Approved bookings count (`status = 15`).
+Reject               | INT       | NO       | Rejected bookings count (`status IN (10,17,18)`).
+request_for_approval | INT       | NO       | Pending client approval count (`request_for_approval = 'pending'`).
+Start Date           | DATE      | YES      | Operational start date (`deliver_start_date` or `visit_start_date`).
+End Date             | DATE      | YES      | Operational end date (`deliver_end_date` or `visit_end_date`).
+Daily Target         | INT       | YES      | (Optional) `target_confirmation_collective_daily`.
+Today_Visits         | INT       | YES      | (Optional) Visited scheduled for today.
+Tomorrow_Visits      | INT       | YES      | (Optional) Visited scheduled for tomorrow.
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 3: ACTIVE CAMPAIGNS MASTER SUMMARY]
+-- Please paste your custom, optimized SQL query for Dataset 3 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+7. DATASET 4: CAMPAIGN INFLUENCER BOOKINGS & STATUSES
+================================================================================
+Target Database: System Core DB (`grandcp3_temp_production` / Core Production DB)
+ETL Destination: `df_ci` / `data/campaign_influencers.csv` (or direct memory)
+
+A. PURPOSE & DOWNSTREAM DEPENDENCIES:
+  - Feeds Tab 3 (Influencer Intelligence & Behavior).
+  - Computes Flakers / Ghosting rates (status 3 = Missed Visit, status 9 = Not Delivery).
+  - Critical input for Coverage Reconciliation: Cross-checked against pCloud and 
+    Dropbox folders to detect Missing Status 7 gaps (influencers with coverage media 
+    whose DB status is not 7).
+  - Linked to WhatsApp chats via phone number to measure conversation-to-booking lift.
+
+B. RECOMMENDED FILTERING & SCOPE:
+  - Bounded to the active campaigns scope or recent booking creation window 
+    (`ci.created_at >= '2026-09-01 00:00:00'` to current date).
+  - Exclude deleted bookings (`ci.deleted_at IS NULL`).
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name              | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+booking_id               | INT       | NO       | Primary Key of booking record (`ci.id`).
+campaign_id              | INT       | NO       | Foreign Key to campaign (`ci.campaign_id`).
+campaign_name            | VARCHAR   | NO       | Name of the campaign (`c.name`).
+campaign_country         | VARCHAR   | YES      | Country associated with campaign.
+influencer_id            | INT       | NO       | Foreign Key to influencer profile (`ci.influencer_id`).
+influencer_name          | VARCHAR   | YES      | Influencer display name (`i.name`).
+influencer_phone         | VARCHAR   | YES      | Primary phone number (`i.phone`).
+influencer_whats_number  | VARCHAR   | YES      | Secondary / WhatsApp phone (`i.whats_number`) - MANDATORY FALLBACK!
+status_id                | INT       | NO       | Numeric operational status code from DB dictionary.
+booking_created_at       | DATETIME  | YES      | Timestamp when influencer was booked (`ci.created_at`).
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 4: CAMPAIGN INFLUENCER BOOKINGS & STATUSES]
+-- Please paste your custom, optimized SQL query for Dataset 4 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+8. DATASET 5: INFLUENCERS MASTER PROFILE DIRECTORY
+================================================================================
+Target Database: System Core DB (`grandcp3_temp_production` / Core Production DB)
+ETL Destination: `df_influencers_master` / `data/influencers_master.csv`
+
+A. PURPOSE & DOWNSTREAM DEPENDENCIES:
+  - Comprehensive phone & social directory of all influencers.
+  - Used by `src/pcloud_reconciliation.py` and `src/reconciliation.py` for multi-tier 
+    fuzzy matching when folder names use social handles (`insta_uname`, `tiktok_uname`, 
+    `snapchat_uname`) instead of real names.
+  - Resolves contacts in Tab 1 and Tab 3 who do not have an active booking in the current month.
+
+B. RECOMMENDED FILTERING & SCOPE:
+  - Master active directory (`deleted_at IS NULL`).
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name          | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+influencer_id        | INT       | NO       | Primary Key of influencer (`i.id`).
+influencer_name      | VARCHAR   | NO       | Influencer official name (`i.name`).
+phone                | VARCHAR   | YES      | Primary phone number (`i.phone`).
+whats_number         | VARCHAR   | YES      | Secondary / WhatsApp phone (`i.whats_number`) - MANDATORY!
+country_name         | VARCHAR   | YES      | Clean country name (e.g. from `co.name`).
+city_id              | INT       | YES      | City identifier.
+insta_uname          | VARCHAR   | YES      | Instagram handle (without '@', clean string).
+tiktok_uname         | VARCHAR   | YES      | TikTok handle.
+snapchat_uname       | VARCHAR   | YES      | Snapchat handle.
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 5: INFLUENCERS MASTER PROFILE DIRECTORY]
+-- Please paste your custom, optimized SQL query for Dataset 5 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+9. DATASET 6 (OPTIONAL / FUTURE): LIVE SHIFT ROSTER & LINE TASKS
+================================================================================
+Target Source: Currently Google Sheets (`Chat Team 's Tasks'`), but if the company 
+ever migrates the shift roster into a MySQL / DB table, here is the exact schema.
+
+A. PURPOSE:
+  - Attributing `original whatsapp` outbound messages to specific agents based 
+    on who held which WhatsApp line at that exact minute.
+  - Applying Live Chat duty filtering (only tasks with 'live', 'response', or 'sr.whatsapp').
+
+B. REQUIRED OUTPUT COLUMNS & SCHEMA (IF STORED IN DB):
+--------------------------------------------------------------------------------
+Column Name          | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+agent_name           | VARCHAR   | NO       | Official name of the agent.
+shift_date           | DATE      | NO       | Date of the shift.
+shift_type           | VARCHAR   | NO       | 'Morning', 'Between', or 'Night'.
+task_description     | VARCHAR   | NO       | Task description (e.g. "Live response KSA 01", "Creation").
+line_assigned        | VARCHAR   | YES      | Line name, phone, or 'All Lines Numbers'.
+start_time           | TIME/STR  | YES      | Exact start time logged by agent.
+end_time             | TIME/STR  | YES      | Exact end time logged by agent (falls back to shift end if NULL).
+--------------------------------------------------------------------------------
+
+C. USER CUSTOM SQL QUERY PLACEHOLDER (OPTIONAL):
+--------------------------------------------------------------------------------
+-- [USER QUERY 6: SHIFT ROSTER & LINE TASKS (OPTIONAL)]
+-- If your company stores shift rosters in the database, paste the query below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+10. DYNAMIC ENGINE INTEGRATION & EXECUTION GUIDE
+================================================================================
+When you populate the query placeholders above:
+1. The queries will be saved into `src/database_queries.py` or executed directly 
+   via SQLAlchemy / PyMySQL connection pools.
+2. The Python ETL pipeline (`src/pipeline.py` & `src/data_loader.py`) is already 
+   100% decoupled from static file paths: it accepts live Pandas DataFrames 
+   directly from SQL `read_sql_query()`.
+3. Caching: The engine will automatically maintain local Parquet caching layers 
+   with an instant UI refresh button (`🔄 Force Reload / Clear Cache`), ensuring 
+   zero-latency performance for users while pulling fresh database records.
+
+================================================================================
+END OF SPECIFICATION FILE
+================================================================================
