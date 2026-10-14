@@ -1,6 +1,6 @@
 # WhatsApp Operations & Multi-Source Reconciliation Engine
-**Last Updated:** 2026-10-13  
-**Engine Version:** v2.4 (Production Hardened • Multi-Source Reconciliation • Zero-Crash Resilience)
+**Last Updated:** 2026-10-14  
+**Engine Version:** v2.5 (Live Google Sheets Integration • Universal Import Fallbacks • Full Cloud Module Sync)
 
 ---
 
@@ -8,7 +8,7 @@
 
 This repository is an operational analytics and audit intelligence system connecting critical data streams for influencer operations:
 1. **WhatsApp Stream:** Real-time messages, conversation threads, and reply SLA metrics (`data/last_month_s_data.parquet`).
-2. **Google Sheets / Shift Roster:** Live task rosters attributing phone messages to agents during their shifts (`tasks.xlsx` & cached parquets).
+2. **Google Sheets / Shift Roster:** Live task rosters fetched directly from Google Sheets (`Chat Team 's Tasks` spreadsheet) via `gspread` + service account, with fast parquet caching (`cached_whatsapp_tasks.parquet` & `cached_gc_tasks.parquet`). Total: **18,171** official shift tasks (6,856 WhatsApp + 12,265 GC).
 3. **System Database:** Campaigns since 1 May 2026, campaign influencer booking statuses, and influencer master directory.
 4. **Dropbox Client Sheets:** Manual campaign Excel workbooks (`Comp.` and `List` sheets) in `C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\...`.
 5. **pCloud Coverage Drive:** Raw uploaded coverage media across active campaigns in KSA, UAE, KW, and EGY in `P:\Operation - Head Office\Coverages-Final\...`.
@@ -75,7 +75,7 @@ This repository is an operational analytics and audit intelligence system connec
 
 ## 3. Ground Truth Rules & Constraints for AI Agents
 
-1. **Google Spreadsheet Access:** Read-only (`operations-511207-eb43144fc000.json`). Never mutate or write.
+1. **Google Spreadsheet Access:** Read-only (active key: `operations-511207-c2981485761f.json`; auto-discovered by `src/config.py`). Never mutate or write.
 2. **Dropbox Folder Access:** Local files in `C:\Users\DA-05\Dropbox\...` are **STRICT READ-ONLY**. Never write or modify files there.
 3. **pCloud Folder Access:** Local files in `P:\...` are **STRICT READ-ONLY**. Never write or modify files there.
 4. **Active Influencer Definition:** Strictly based on `campaign_influencers.status` in `(2, 7, 8, 11, 13)`. Never use `influencers.active`.
@@ -87,7 +87,17 @@ This repository is an operational analytics and audit intelligence system connec
 
 ---
 
-## 4. Changelog & Bug Fixes (v2.4 Audit)
+## 4a. Changelog (v2.5 — Live Google Sheets & Cloud Deployment)
+
+| Component | Change | Details |
+| :--- | :--- | :--- |
+| `src/data_loader.py` | Live Google Sheets integration | Roster tasks now fetched live from `Chat Team 's Tasks` spreadsheet (sheets: `what's app tasks` & `Tasks ( GC )`) via `gspread` + service account. Static `tasks.xlsx` retained as emergency fallback only. |
+| `src/config.py` | Dynamic credential discovery | `_find_service_account_file()` auto-discovers the latest `operations-*.json` key across multiple search paths. Old key `eb43144fc000` replaced by active key `c2981485761f`. |
+| `src/*.py` | Universal 3-tier import fallbacks | All modules (`data_loader`, `pipeline`, `metrics`, `reconciliation`, `pcloud_reconciliation`) now use `try: from .config` → `from src.config` → `from config` to prevent `ImportError` on Streamlit Cloud. |
+| `project/src/` | Full module sync | `project/src/` now mirrors all `src/` engine modules (pipeline, metrics, reconciliation, pcloud_reconciliation, __init__), not just `app.py`. |
+| `app.py` (sidebar) | Sync button | Added `🔄 Sync from Google Sheets` sidebar button for one-click live data refresh. |
+
+## 4b. Changelog (v2.4 — Production Hardening)
 
 | Component | Issue | Fix Applied | Result |
 | :--- | :--- | :--- | :--- |

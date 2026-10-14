@@ -5,7 +5,7 @@ An enterprise-grade operational analytics, shift attribution, and multi-source a
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Architecture](https://img.shields.io/badge/Architecture-Parquet%20Cached%20Layer-green.svg)]()
-[![System Status](https://img.shields.io/badge/Status-Production%20Ready%20(v2.4)-success.svg)]()
+[![System Status](https://img.shields.io/badge/Status-Production%20Ready%20(v2.5)-success.svg)]()
 
 🚀 **Live Production Dashboard:** [https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/](https://testing-whatsapp-gb9ktrrcuw7bqlpkden5gs.streamlit.app/)
 
@@ -125,6 +125,7 @@ The interactive dashboard (`app.py` / `src/app.py`) provides 5 comprehensive vie
 | **Tab 5** | **📱 Line Health & System Status** | Inventory of WhatsApp accounts (`whatsappAccId`), line nicknames, phone numbers, and operational readiness. |
 
 **Sidebar Controls:**
+- 🔄 **Sync from Google Sheets:** One-click live synchronization of shift roster tasks directly from the official Google Spreadsheet (18,171 official tasks across `what's app tasks` & `Tasks ( GC )` sheets).
 - ⚡ **Force Reload / Clear Cache:** Instantly purges cache and reloads fresh data from parquet/disk.
 - 🟢 **Live Status Indicators:** Real-time counts for active shifts, active agents, Dropbox gaps, and critical Status 7 gaps.
 
@@ -136,7 +137,7 @@ These non-negotiable rules govern all codebase operations:
 
 1. **Google Sheets Read-Only Policy:**
    - Spreadsheet Link: `https://docs.google.com/spreadsheets/d/1cmG2xWjcbF-76YOcvPKyn1x_BciElT3F3gyFemE_Kq0/edit`
-   - Access via service account (`operations-511207-eb43144fc000.json`).
+   - Access via service account (active key: `operations-511207-c2981485761f.json`; auto-discovered by `src/config.py`).
    - **STRICTLY READ-ONLY.** Under no circumstances should any script or agent write, modify, or append data to this spreadsheet.
 2. **Local Storage Read-Only Policy:**
    - Dropbox (`C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\...`) is **STRICTLY READ-ONLY**.
@@ -165,11 +166,11 @@ Project/
 ├── OPERATIONS_RECOMMENDATIONS.md       # Operational analysis & SLA improvement plan
 ├── OPS_MANAGER_BRIEF.md                # Operations Manager executive summary
 ├── COMPLETE_SYSTEM_SCOPE_AND_ROADMAP.md # Detailed deliverables & milestone roadmap
-├── operations-511207-eb43144fc000.json # Google Sheets Service Account credentials (READ-ONLY)
+├── operations-511207-c2981485761f.json # Google Sheets Service Account credentials (READ-ONLY, auto-discovered)
 │
 ├── src/                                # Core Engine Modules
 │   ├── config.py                       # Configuration paths, status maps, shift definitions
-│   ├── data_loader.py                  # Connectors for Sheets, CSVs, Parquet, and DB
+│   ├── data_loader.py                  # Connectors for Google Sheets (live), CSVs, Parquet, and DB
 │   ├── pipeline.py                     # Message cleaning, shift roster joining & attribution
 │   ├── metrics.py                      # SLA reply times, unanswered flags, flakers audit
 │   ├── reconciliation.py               # Dropbox 3-way reconciliation engine
@@ -177,8 +178,10 @@ Project/
 │   └── app.py                          # Streamlit application source
 │
 ├── project/                            # Deployment Subfolder Compatibility
-│   └── src/
-│       └── app.py                      # Subfolder Streamlit forwarder
+│   └── src/                            # Full mirror of src/ for Streamlit Cloud
+│       ├── app.py, config.py, data_loader.py, pipeline.py
+│       ├── metrics.py, reconciliation.py, pcloud_reconciliation.py
+│       └── __init__.py
 │
 ├── data/                               # Data Storage & High-Speed Cache Layer
 │   ├── last_month_s_data.parquet       # WhatsApp message stream
@@ -242,8 +245,11 @@ Streamlit Cloud automatically listens to GitHub commits on `main` and updates wi
 
 ---
 
-## 🛠️ Recent Fixes & Quality Assurance (v2.4)
+## 🛠️ Recent Fixes & Quality Assurance (v2.5)
 
+- **Live Google Sheets Integration (v2.5):** Shift roster data source migrated from static local `tasks.xlsx` Excel file to live Google Sheets (`Chat Team 's Tasks`). 18,171 official shift tasks now fetched and cached dynamically via `gspread` + service account. One-click sidebar sync button added.
+- **Universal Import Fallbacks (v2.5):** All `src/` modules now use 3-tier `try/except` import blocks (`from .config` → `from src.config` → `from config`) ensuring zero `ImportError` on Streamlit Cloud regardless of execution path.
+- **Full Module Sync to `project/src/` (v2.5):** `project/src/` now contains the complete engine bundle (pipeline, metrics, reconciliation, pcloud_reconciliation) instead of just `app.py`, eliminating cloud deployment mismatches.
 - **NaN Safety in Status Mapping (`src/metrics.py`):** Added safe float conversion with try/except fallbacks to prevent runtime crashes when bookings contain missing status IDs.
 - **Dynamic Flakers Column Handling (`src/metrics.py`, `app.py`, `src/app.py`, `project/src/app.py`):** Eliminated `KeyError` crashes when `booking_created_at` or `influencer_phone` are not present in source files.
 - **Float-to-Int Key Resolution (`src/pcloud_reconciliation.py`):** Fixed dictionary key mismatches where numeric status IDs imported as floats prevented lookup in integer status dictionaries.

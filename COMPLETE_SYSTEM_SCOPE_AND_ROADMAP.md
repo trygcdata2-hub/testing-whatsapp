@@ -148,6 +148,6 @@ graph TD
 
 ## 🔒 Security & Governance Constraints
 
-1. **Google Sheets Access:** STRICT READ-ONLY via Service Account (`operations-511207-eb43144fc000.json`).
+1. **Google Sheets Access:** STRICT READ-ONLY via Service Account (active key: `operations-511207-c2981485761f.json`; auto-discovered by `src/config.py`).
 2. **Database Access:** STRICT READ-ONLY (`SELECT` permissions only).
 3. **Data Privacy (PII):** Phone numbers and personal details are masked in shared views and exports.
