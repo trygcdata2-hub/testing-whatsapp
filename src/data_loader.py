@@ -53,16 +53,74 @@ def load_google_sheet_tasks(sheet_name: str = "what's app tasks") -> pd.DataFram
         print(f"Warning: Could not load sheet '{sheet_name}' from Google Sheets API: {e}")
         return pd.DataFrame()
 
-def load_tasks_data() -> pd.DataFrame:
+def sync_tasks_from_google_sheets() -> dict:
     """
-    Loads tasks from either local files (tasks.xlsx, cached parquets) or Google Sheets.
+    STRICT READ-ONLY: Connects to the official Google Spreadsheet,
+    fetches 'what's app tasks' and 'Tasks ( GC )',
+    and updates the fast local Parquet cache layer.
+    """
+    if not SERVICE_ACCOUNT_FILE.exists():
+        return {"success": False, "error": f"Credentials file not found at {SERVICE_ACCOUNT_FILE}"}
+    
+    try:
+        creds = Credentials.from_service_account_file(
+            str(SERVICE_ACCOUNT_FILE),
+            scopes=GOOGLE_SHEETS_SCOPES
+        )
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(GOOGLE_SHEET_ID)
+        
+        results = {}
+        cached_wa_p = DATA_DIR / "cached_whatsapp_tasks.parquet"
+        cached_gc_p = DATA_DIR / "cached_gc_tasks.parquet"
+        
+        # 1. 'what's app tasks'
+        try:
+            ws_wa = sheet.worksheet("what's app tasks")
+            rows_wa = ws_wa.get_all_values()
+            if rows_wa:
+                headers = [f"col_{i}" if not rows_wa[0][i].strip() else rows_wa[0][i].strip() for i in range(len(rows_wa[0]))]
+                df_wa = pd.DataFrame(rows_wa[1:], columns=headers).astype(str)
+                df_wa.to_parquet(cached_wa_p, index=False)
+                results["whatsapp_tasks_rows"] = len(df_wa)
+        except Exception as e:
+            results["whatsapp_tasks_error"] = str(e)
+            
+        # 2. 'Tasks ( GC )'
+        try:
+            ws_gc = sheet.worksheet("Tasks ( GC )")
+            rows_gc = ws_gc.get_all_values()
+            if rows_gc:
+                headers = [f"col_{i}" if not rows_gc[0][i].strip() else rows_gc[0][i].strip() for i in range(len(rows_gc[0]))]
+                df_gc = pd.DataFrame(rows_gc[1:], columns=headers).astype(str)
+                df_gc.to_parquet(cached_gc_p, index=False)
+                results["gc_tasks_rows"] = len(df_gc)
+        except Exception as e:
+            results["gc_tasks_error"] = str(e)
+            
+        results["success"] = "whatsapp_tasks_rows" in results or "gc_tasks_rows" in results
+        return results
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def load_tasks_data(force_refresh_google_sheets: bool = False) -> pd.DataFrame:
+    """
+    Loads tasks from either fast local Parquet cache or live Google Sheets.
+    If force_refresh_google_sheets=True or cache is missing, syncs directly from Google Sheets.
     Combines 'what's app tasks' and 'Tasks ( GC )'.
     """
+    cached_wa_p = DATA_DIR / "cached_whatsapp_tasks.parquet"
+    cached_gc_p = DATA_DIR / "cached_gc_tasks.parquet"
+    
+    # If forced or if cache does not exist, fetch live from Google Sheets
+    if force_refresh_google_sheets or not (cached_wa_p.exists() and cached_gc_p.exists()):
+        sync_res = sync_tasks_from_google_sheets()
+        if sync_res.get("success"):
+            print(f"Synced roster from Google Sheets: {sync_res}")
+            
     tasks_dfs = []
     
-    # 1. Check local parquet cache
-    cached_wa_p = BASE_DIR / "data" / "cached_whatsapp_tasks.parquet"
-    cached_gc_p = BASE_DIR / "data" / "cached_gc_tasks.parquet"
+    # 1. Read from local Parquet cache
     if cached_wa_p.exists():
         try:
             tasks_dfs.append(pd.read_parquet(cached_wa_p))
@@ -74,10 +132,10 @@ def load_tasks_data() -> pd.DataFrame:
         except Exception:
             pass
             
-    # 2. Check local Excel files in data/ if parquet not found
+    # 2. Fallback to local Excel files in data/ if parquet failed
     if not tasks_dfs:
         for fn in ["tasks.xlsx", "Chat Team 's Tasks.xlsx", "google_sheets_tasks.xlsx"]:
-            excel_p = BASE_DIR / "data" / fn
+            excel_p = DATA_DIR / fn
             if excel_p.exists():
                 try:
                     xls = pd.ExcelFile(excel_p)
@@ -87,7 +145,7 @@ def load_tasks_data() -> pd.DataFrame:
                 except Exception as e:
                     print(f"Error reading local tasks Excel {excel_p}: {e}")
                 
-    # 3. If no local tasks found, attempt live Google Sheets
+    # 3. Direct Google Sheets fallback if no local files exist
     if not tasks_dfs:
         for sname in ["what's app tasks", "Tasks ( GC )"]:
             df = load_google_sheet_tasks(sname)

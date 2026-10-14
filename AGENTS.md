@@ -4,7 +4,7 @@
 - **Spreadsheet Link:** `https://docs.google.com/spreadsheets/d/1cmG2xWjcbF-76YOcvPKyn1x_BciElT3F3gyFemE_Kq0/edit`
 - **STRICT RULE:** This Google Spreadsheet is **READ-ONLY**.
 - **NEVER** write, edit, update, delete, append, or modify any data, cells, or sheets in this Google Spreadsheet under any circumstances.
-- Only perform read operations using the service account credentials (`operations-511207-eb43144fc000.json`).
+- Only perform read operations using the service account credentials (`operations-511207-*.json`, active key: `operations-511207-c2981485761f.json`).
 
 ## 2. Influencer Activity Definition (CRITICAL RULE)
 - **DO NOT** rely on `influencers.active` to determine if an influencer is active or has participated.

@@ -19,9 +19,15 @@ INFLUENCERS_MASTER_PATH = DATA_DIR / "influencers_master.csv"
 DB_DOCS_PATH = DATA_DIR / "documentations for the database.xlsx"
 
 # Google Sheets Configuration (STRICTLY READ-ONLY)
-SERVICE_ACCOUNT_FILE = BASE_DIR / "operations-511207-eb43144fc000.json"
-if not SERVICE_ACCOUNT_FILE.exists() and (BASE_DIR / "project" / "operations-511207-eb43144fc000.json").exists():
-    SERVICE_ACCOUNT_FILE = BASE_DIR / "project" / "operations-511207-eb43144fc000.json"
+def _find_service_account_file() -> Path:
+    for search_dir in [BASE_DIR, BASE_DIR / "project"]:
+        if search_dir.exists():
+            matched = sorted(list(search_dir.glob("operations-*.json")), key=lambda p: p.stat().st_mtime, reverse=True)
+            if matched:
+                return matched[0]
+    return BASE_DIR / "operations-511207-c2981485761f.json"
+
+SERVICE_ACCOUNT_FILE = _find_service_account_file()
 GOOGLE_SHEET_ID = "1cmG2xWjcbF-76YOcvPKyn1x_BciElT3F3gyFemE_Kq0"
 GOOGLE_SHEETS_SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly"

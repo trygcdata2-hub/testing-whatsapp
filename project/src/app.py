@@ -714,9 +714,19 @@ with st.sidebar:
     if st.button("🔄 Force Reload / Clear Cache", type="primary", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+    if st.button("📥 Sync Live from Google Sheets", use_container_width=True):
+        with st.spinner("Fetching latest shift roster from Google Sheets..."):
+            from src.data_loader import sync_tasks_from_google_sheets
+            sync_res = sync_tasks_from_google_sheets()
+            if sync_res.get("success"):
+                st.success(f"✅ Roster synced: {sync_res.get('whatsapp_tasks_rows', 0):,} WA + {sync_res.get('gc_tasks_rows', 0):,} GC rows!")
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.error(f"❌ Failed to sync: {sync_res.get('error')}")
     st.divider()
     roster_active_count = len(data.get('roster_df', []))
-    st.markdown(f"**Roster Engine:** {'🟢 Active' if roster_active_count > 0 else '⚪ Inactive'}")
+    st.markdown(f"**Roster Engine:** {'🟢 Active (Google Sheets)' if roster_active_count > 0 else '⚪ Inactive'}")
     st.markdown(f"**Shift Intervals:** `{roster_active_count:,}`")
     st.markdown(f"**Active Agents:** `{len(data['agents_df']):,}`")
     st.divider()
