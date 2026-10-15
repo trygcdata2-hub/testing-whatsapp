@@ -385,7 +385,11 @@ def reconcile_pcloud_with_system(
     total_not_booked = 0
     total_unknown = 0
     matched_active = 0
-    active_count = 0
+    # Pre-index CI bookings by lowercase campaign name for O(1) instant lookups
+    ci_lookup_by_camp = {}
+    if ci_df is not None and not ci_df.empty and 'campaign_name' in ci_df.columns:
+        for cname, grp in ci_df.groupby(ci_df['campaign_name'].astype(str).str.strip().str.lower()):
+            ci_lookup_by_camp[cname] = dict(zip(grp['influencer_id'], grp['status_id']))
 
     for _, s_row in campaigns_df.iterrows():
         s_name = s_row['Campaign Name']
@@ -412,13 +416,9 @@ def reconcile_pcloud_with_system(
 
         p_infs = pcloud_infs_by_camp.get(p_name, []) if p_name else []
 
-        # Fast bookings lookup for this system campaign
+        # Fast O(1) bookings lookup for this system campaign
         s_name_str = str(s_name).strip().lower() if pd.notna(s_name) else ""
-        if 'campaign_name' in ci_df.columns and not ci_df.empty:
-            ci_this_camp = ci_df[ci_df['campaign_name'].astype(str).str.strip().str.lower() == s_name_str]
-            camp_booking_lookup = dict(zip(ci_this_camp['influencer_id'], ci_this_camp['status_id']))
-        else:
-            camp_booking_lookup = {}
+        camp_booking_lookup = ci_lookup_by_camp.get(s_name_str, {})
 
         camp_aligned = 0
         camp_missing_7 = 0
@@ -615,6 +615,12 @@ def get_cached_or_run_pcloud_reconciliation(
         try:
             df_camps.to_parquet(CACHE_PCLOUD_CAMPAIGNS, index=False)
             df_infs.to_parquet(CACHE_PCLOUD_INFLUENCERS, index=False)
+        except Exception:
+            pass
+    elif CACHE_PCLOUD_CAMPAIGNS.exists() and CACHE_PCLOUD_INFLUENCERS.exists():
+        try:
+            df_camps = pd.read_parquet(CACHE_PCLOUD_CAMPAIGNS)
+            df_infs = pd.read_parquet(CACHE_PCLOUD_INFLUENCERS)
         except Exception:
             pass
 

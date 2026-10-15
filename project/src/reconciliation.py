@@ -17,6 +17,13 @@ CACHE_RECON_CAMPAIGNS = DATA_DIR / "cached_dropbox_recon_campaigns.parquet"
 CACHE_RECON_INFLUENCERS = DATA_DIR / "cached_dropbox_recon_influencers.parquet"
 
 DEFAULT_DROPBOX_FOLDERS = [
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "4- KSA" / "Grand Community" / "Active Campaigns"),
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "4- KSA" / "ELITE" / "Active Campigns"),
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "3- UAE" / "Grand Community" / "Active Campaigns"),
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "3- UAE" / "Elite" / "Active Campaigns"),
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "2- KW" / "Grand Community" / "Active Campaigns"),
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "2- KW" / "Elite" / "Active Campaigns"),
+    str(Path.home() / "Dropbox" / "GC - operation live" / "Campaign Source" / "1- EGY" / "Egypt Campigns" / "Active Campaigns"),
     r"C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\4- KSA\Grand Community\Active Campaigns",
     r"C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\4- KSA\ELITE\Active Campigns",
     r"C:\Users\DA-05\Dropbox\GC - operation live\Campaign Source\3- UAE\Grand Community\Active Campaigns",
@@ -434,10 +441,21 @@ def get_cached_or_run_reconciliation(
     files = scan_dropbox_campaign_files()
     drop_summary, drop_infs = parse_dropbox_campaigns(files)
     
-    # Save cache
+    # Save cache if files found, otherwise fallback to existing cache
     if not drop_summary.empty:
         drop_summary.to_parquet(CACHE_RECON_CAMPAIGNS, index=False)
+    elif CACHE_RECON_CAMPAIGNS.exists():
+        try:
+            drop_summary = pd.read_parquet(CACHE_RECON_CAMPAIGNS)
+        except Exception:
+            pass
+
     if not drop_infs.empty:
         drop_infs.to_parquet(CACHE_RECON_INFLUENCERS, index=False)
+    elif CACHE_RECON_INFLUENCERS.exists():
+        try:
+            drop_infs = pd.read_parquet(CACHE_RECON_INFLUENCERS)
+        except Exception:
+            pass
         
     return reconcile_campaigns_and_influencers(campaigns_df, ci_df, inf_master, drop_summary, drop_infs)
