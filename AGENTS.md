@@ -68,6 +68,9 @@
 - **System DB as the Driver:** Reconciliation NEVER treats external drives (pCloud's ~392 folders or Dropbox workbooks) as the master source of campaigns. Reconciliation ALWAYS starts from System Active Campaigns (`reference/active_campaigns.sql`) and looks outward to verify external assets.
 - **Dynamic Database Migration Direction:** Future system updates will migrate from static files (May-to-date CSVs, all-time WhatsApp messages) to bounded live SQL queries targeting strictly active campaigns and bounded recent WhatsApp windows. All code modules must accept DataFrames and remain fully decoupled from file paths to ensure zero breakage upon live SQL cutover.
 
-
-
-
+## 11. Influencer Communication Attrition Rules (No Response / Block / Not Found)
+- **Direct Database Ground Truth (Dropbox Replacement):** Legacy Dropbox scanning for "No Response / Block / Not Found" (`reference/No responce dropbox.py` syncing to Google Sheet `Pending Users`) is completely replaced by direct database classification across WhatsApp Pro DB and System Core DB.
+- **Rule A (No Response):** An influencer is classified as `No Response` if our company/agent sent an outbound message (`isFromMe = 1`) and the influencer has NOT replied for >= 7 days (1 full week elapsed without inbound reply).
+- **Rule B (Block):** An influencer is classified as `Block` if `Message.is_block = 1` (or `isBlock = 1`) in WhatsApp Pro DB, meaning the contact blocked our WhatsApp line account (`whatsappAccId`).
+- **Rule C (Not Found - Missing Contact Phone):** A contact is classified as `Not Found` if a chat room exists (`roomId IS NOT NULL`) but has no associated phone number (`Contact.phone IS NULL` or empty string).
+- **Rule D (Not Found - Unknown in System Phones):** A contact chatting on WhatsApp whose phone number's last 8 digits (`RIGHT(clean_phone, 8)`) do NOT exist anywhere in the System Core DB table `influencer_phones` (`RIGHT(influencer_phones.phone, 8)`).

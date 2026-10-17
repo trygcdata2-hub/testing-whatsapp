@@ -15,3 +15,10 @@
 ## 3. Database Migration Preparedness
 - System architecture is transitioning towards querying live active campaigns and recent message time windows.
 - All core functions in `src/pipeline.py`, `src/pcloud_reconciliation.py`, and `src/reconciliation.py` are parameterized to accept DataFrames to guarantee seamless zero-downtime database migration.
+
+## 4. Influencer Communication Attrition Rules (No Response / Block / Not Found)
+- **Direct Database Classification:** Fully replaces legacy Dropbox scanning for pending users (`reference/No responce dropbox.py`).
+- **No Response:** Influencer sent an outbound message (`isFromMe = 1`) with no inbound reply for >= 7 days.
+- **Block:** Identified via `Message.is_block = 1` in WhatsApp Pro DB.
+- **Not Found (Missing Phone):** Chat room exists (`roomId IS NOT NULL`) but contact phone is NULL or empty string.
+- **Not Found (Unknown in System):** Phone last 8 digits (`RIGHT(phone, 8)`) do NOT exist in System Core DB `influencer_phones` table.

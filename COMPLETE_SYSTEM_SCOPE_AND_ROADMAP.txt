@@ -91,6 +91,10 @@ MODULE 3: INFLUENCER INTELLIGENCE & BEHAVIOR (THE INFLUENCER WING)
 [x] Searchable Influencer History:
     - Lookup any influencer by phone/handle to see past chat threads, campaigns,
       and reliability scores.
+[x] Direct Database Attrition Tracking (Replacing Dropbox Pending Users):
+    - Automated classification of No Response (unanswered outbound >= 7 days),
+      Block (Message.is_block = 1), and Not Found (missing room phone OR phone
+      Right(8) missing in System Core DB influencer_phones table).
 
 MODULE 4: CAMPAIGN HEALTH & DROPBOX RECONCILIATION (THE MANAGEMENT WING)
 -----------------------------------------------------------------------

@@ -1,7 +1,7 @@
 ================================================================================
 DYNAMIC SYSTEM DATABASE REQUIREMENTS & QUERY SPECIFICATIONS
 ================================================================================
-Document Version: 1.0 (Dynamic Database Architecture)
+Document Version: 2.0 (Dynamic Database Architecture & Attrition Tracking)
 Target Audience: Database Architect / Engineering Team / Operations BI
 Status: Ready for Custom Production SQL Insertion
 Format: UTF-8 Plain Text Specification
@@ -12,13 +12,15 @@ TABLE OF CONTENTS
 1. Architectural Overview & Dynamic Ingestion Strategy
 2. Database Topology (Sources & Roles)
 3. Master Business Rules & Data Integrity Standards
-4. Dataset 1: WhatsApp Raw Message Stream (WhatsApp Pro DB)
+4. Dataset 1: WhatsApp Raw Message Stream (WhatsApp Pro DB) [UPDATED: is_block, roomId]
 5. Dataset 2: Official WhatsApp Lines Inventory (WhatsApp Pro DB)
 6. Dataset 3: Active Campaigns Master Summary (System Core DB)
 7. Dataset 4: Campaign Influencer Bookings & Statuses (System Core DB)
 8. Dataset 5: Influencers Master Profile Directory (System Core DB)
 9. Dataset 6 (Optional / Future): Live Shift Roster & Line Tasks
-10. Dynamic Engine Integration & Execution Guide
+10. Dataset 7 (NEW): System Influencer Phones Master (`influencer_phones` Table)
+11. Dataset 8 (NEW): Influencer Communication Attrition View (No Response / Block / Not Found)
+12. Dynamic Engine Integration & Execution Guide
 
 
 ================================================================================
@@ -27,6 +29,13 @@ TABLE OF CONTENTS
 The Operations & WhatsApp Intelligence Dashboard is transitioning from static 
 flat-file imports (CSV/Parquet snapshots) to a 100% dynamic, bounded SQL 
 ingestion pipeline.
+
+Additionally, we are migrating from legacy Dropbox folder scanning for 
+"Pending Users" (previously handled by `reference/No responce dropbox.py` 
+writing to Google Sheets) to DIRECT, REAL-TIME DATABASE CLASSIFICATION of:
+  - No Response (outbound message with no reply >= 7 days)
+  - Block (`message.is_block = 1`)
+  - Not Found (missing phone in room OR phone last 8 digits missing in `influencer_phones`)
 
 To run the entire system dynamically without breaking analytical logic, the 
 Python ETL engine (`src/pipeline.py`, `src/metrics.py`, `src/data_loader.py`, 
@@ -48,14 +57,15 @@ The platform relies on two distinct database clusters:
 
 CLUSTER A: WHATSAPP PRO DATABASE (MySQL / `Pro` DB)
   - Role: Real-time and historical chat streams, inbound/outbound communication,
-    response speed calculations, SLA monitoring, and WhatsApp line accounts.
+    response speed calculations, SLA monitoring, WhatsApp line accounts, block 
+    detection, and room/contact linking.
   - Primary Tables: `Message`, `Room`, `Contact`, `Whatsapp`.
 
 CLUSTER B: SYSTEM CORE DATABASE (`grandcp3_temp_production` / Core App DB)
   - Role: Business outcomes, campaign configurations, influencer booking states,
-    master profiles, and social media handles.
+    master profiles, social media handles, and the master `influencer_phones` directory.
   - Primary Tables: `campaigns`, `campaign_influencers`, `influencers`, 
-    `countries`, `brands`, `campaign_country_favourites(_v2)`.
+    `influencer_phones`, `countries`, `brands`, `campaign_country_favourites(_v2)`.
 
 EXTERNAL (CURRENTLY INTEGRATED VIA API):
   - Google Spreadsheet: Official Live Shift Roster (`Chat Team 's Tasks`) 
@@ -102,9 +112,21 @@ Please ensure your SQL queries adhere to the following ground-truth rules:
    - All `createdAt` and date fields should be UTC or standardized Saudi Time 
      (`Asia/Riyadh`, UTC+3) to keep shift roster attribution perfectly synchronized.
 
+6. INFLUENCER COMMUNICATION & ATTRITION RULES (NO RESPONSE / BLOCK / NOT FOUND):
+   - Replaces manual Dropbox folder scanning (`reference/No responce dropbox.py`):
+     * Rule A (No Response): Outbound message sent (`isFromMe = 1`) and the 
+       influencer has NOT replied for >= 7 days (1 full week elapsed).
+     * Rule B (Block): Contact is flagged in WhatsApp Pro DB with `Message.is_block = 1` 
+       (or `isBlock = 1`), meaning the contact blocked our WhatsApp line.
+     * Rule C (Not Found - Missing Contact Phone): A room/chat exists (`roomId IS NOT NULL`) 
+       but has no phone number (`Contact.phone IS NULL` or empty string).
+     * Rule D (Not Found - Unknown in System): A contact chatting on WhatsApp whose 
+       phone's last 8 digits (`RIGHT(clean_phone, 8)`) do NOT exist anywhere in 
+       the System Core DB table `influencer_phones` (`RIGHT(influencer_phones.phone, 8)`).
+
 
 ================================================================================
-4. DATASET 1: WHATSAPP RAW MESSAGE STREAM
+4. DATASET 1: WHATSAPP RAW MESSAGE STREAM (UPDATED)
 ================================================================================
 Target Database: WhatsApp Pro DB (MySQL)
 ETL Destination: `df_messages` / `data/last_month_s_data.parquet` (or direct memory)
@@ -116,6 +138,7 @@ A. PURPOSE & DOWNSTREAM DEPENDENCIES:
   - Attributes messages sent as `original whatsapp` to real shift agents.
   - Detects Dynamic Unanswered chats (where influencer sent the last message).
   - Calculates SLAs (% answered < 15 min, % answered < 60 min, median reply time).
+  - NEW: Provides `roomId` and `is_block` to classify Blocked and Not Found chats.
 
 B. RECOMMENDED FILTERING & SCOPE:
   - Time window: Bounded rolling window (e.g., `createdAt >= CURDATE() - INTERVAL 45 DAY`
@@ -129,13 +152,15 @@ C. REQUIRED OUTPUT COLUMNS & SCHEMA:
 --------------------------------------------------------------------------------
 Column Name     | Type      | Nullable | Description & Code Expectations
 --------------------------------------------------------------------------------
-phone           | VARCHAR   | NO       | Influencer/Customer phone number (clean digits).
+roomId          | INT/STR   | YES      | [NEW] Room / Chat session ID (`m.roomId` or `r.id`).
+phone           | VARCHAR   | YES      | Influencer/Customer phone number (from `Contact.phone` or `Room`).
 content         | TEXT      | YES      | Text message body (for context/preview).
 createdAt       | DATETIME  | NO       | Exact timestamp of message dispatch/receipt.
 type            | VARCHAR   | YES      | Message type ('text', 'image', 'audio', etc.).
 isRead          | TINYINT   | YES      | Read receipt status (1 = read, 0 = unread).
 isFromMe        | VARCHAR/INT| NO      | 1 = Outbound (from company/agent), 0 = Inbound (from influencer).
 isSystem        | VARCHAR/INT| NO      | 0 = Human message, 1 = System/bot event.
+is_block        | TINYINT/INT| YES     | [NEW] 1 if contact blocked our WhatsApp line (`m.is_block` or `m.isBlock`), 0 otherwise.
 whatsappAccId   | VARCHAR/INT| NO      | ID of the WhatsApp SIM line used (FK to Whatsapp table).
 userName        | VARCHAR   | YES      | Agent name who sent it, or 'original whatsapp' if sent via phone/AnyDesk.
 isInvitation    | VARCHAR/INT| YES     | Campaign invitation flag (1/0).
@@ -161,12 +186,10 @@ ETL Destination: `df_lines` / `data/whatsapp_lines.xlsx` (replacing static Excel
 A. PURPOSE & DOWNSTREAM DEPENDENCIES:
   - Feeds Tab 5 (Line Health & Infrastructure) and the Shift Roster Line Matcher.
   - Maps `whatsappAccId` to the line's human-readable name/nickname and actual phone number.
-  - Currently loaded from `data/whatsapp_lines.xlsx`. Running this dynamically from 
-    the DB makes line management completely automated without manual spreadsheet maintenance.
+  - Running this dynamically from the DB makes line management completely automated.
 
 B. RECOMMENDED FILTERING & SCOPE:
   - All active lines currently configured in the WhatsApp Pro system.
-  - Exclude inactive or decommissioned lines if a status column exists.
 
 C. REQUIRED OUTPUT COLUMNS & SCHEMA:
 --------------------------------------------------------------------------------
@@ -368,7 +391,98 @@ C. USER CUSTOM SQL QUERY PLACEHOLDER (OPTIONAL):
 
 
 ================================================================================
-10. DYNAMIC ENGINE INTEGRATION & EXECUTION GUIDE
+10. DATASET 7 (NEW): SYSTEM INFLUENCER PHONES MASTER (`influencer_phones` TABLE)
+================================================================================
+Target Database: System Core DB (`grandcp3_temp_production` / Core Production DB)
+Target Entity: `influencer_phones` table
+ETL Destination: `df_system_phones` / memory lookup
+
+A. PURPOSE & DOWNSTREAM DEPENDENCIES:
+  - Serves as the ground truth directory of all recognized, registered influencer 
+    phone numbers in the system.
+  - Used for the `Not Found` Validation Rule: Any WhatsApp contact chatting with us 
+    whose phone number's last 8 digits (`RIGHT(clean_phone, 8)`) do NOT exist in 
+    `influencer_phones` is classified as `Not Found` (an unregistered contact).
+  - Eliminates manual scanning of Dropbox `Pending Users` lists.
+
+B. RECOMMENDED FILTERING & SCOPE:
+  - All valid phone records for registered influencers.
+  - Strip non-digits and normalize to the rightmost 8 digits for fast hash-set matching.
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name          | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+influencer_id        | INT       | NO       | Foreign Key to `influencers.id`.
+phone                | VARCHAR   | NO       | Registered phone number (clean digits).
+phone_right8         | VARCHAR   | NO       | Rightmost 8 digits of phone (`RIGHT(clean_phone, 8)`).
+is_primary           | TINYINT   | YES      | 1 if primary phone, 0 otherwise.
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 7: SYSTEM INFLUENCER PHONES MASTER]
+-- Please paste your custom, optimized SQL query for Dataset 7 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+11. DATASET 8 (NEW): INFLUENCER ATTRITION & COMMUNICATION STATUS ENGINE
+================================================================================
+Target Databases: Cross-Database Logic (WhatsApp Pro DB + System Core DB)
+ETL Destination: `df_attrition` / Tab 3 Influencer Intelligence Attrition Feed
+
+A. PURPOSE & BUSINESS OBJECTIVE:
+  - Completely replaces the legacy script `reference/No responce dropbox.py` and 
+    the external Google Sheet `Pending Users`.
+  - Automatically identifies and categorizes lost, unresponsive, or invalid influencers 
+    into 3 actionable operational buckets:
+      1. 'No Response': Outbound message sent from our line, influencer has not replied for >= 7 days.
+      2. 'Block': Influencer blocked our WhatsApp SIM account (`Message.is_block = 1`).
+      3. 'Not Found': Chat room exists without a phone OR phone doesn't match `influencer_phones` (Right(8)).
+
+B. CLASSIFICATION HIERARCHY LOGIC:
+  ```
+  IF Message.is_block = 1 THEN 'Block'
+  ELSE IF Room.id IS NOT NULL AND (Contact.phone IS NULL OR Contact.phone = '') THEN 'Not Found'
+  ELSE IF RIGHT(Contact.phone, 8) NOT IN (SELECT RIGHT(phone, 8) FROM SystemDB.influencer_phones) THEN 'Not Found'
+  ELSE IF last_sender = 'Company' AND DATEDIFF(NOW(), last_outbound_time) >= 7 THEN 'No Response'
+  ELSE 'Active / In Progress'
+  ```
+
+C. REQUIRED OUTPUT COLUMNS & SCHEMA:
+--------------------------------------------------------------------------------
+Column Name              | Type      | Nullable | Description & Code Expectations
+--------------------------------------------------------------------------------
+phone                    | VARCHAR   | YES      | WhatsApp contact phone number.
+influencer_name          | VARCHAR   | YES      | Matched influencer name (if found in system).
+whatsappAccId            | VARCHAR   | NO       | WhatsApp line ID where communication occurred.
+line_name                | VARCHAR   | YES      | Account name (e.g. "KSA Line 01").
+communication_status     | VARCHAR   | NO       | 'No Response', 'Block', 'Not Found', or 'Active'.
+last_outbound_time       | DATETIME  | YES      | Timestamp of company's last sent message.
+days_since_outbound      | INT       | YES      | Days elapsed since last company message (`DATEDIFF(NOW(), last_outbound_time)`).
+last_message_content     | TEXT      | YES      | Content of last sent message.
+is_block_flag            | TINYINT   | NO       | 1 if blocked, 0 otherwise.
+exists_in_system_phones  | TINYINT   | NO       | 1 if matched in `influencer_phones`, 0 if Not Found.
+--------------------------------------------------------------------------------
+
+D. USER CUSTOM SQL QUERY PLACEHOLDER:
+--------------------------------------------------------------------------------
+-- [USER QUERY 8: INFLUENCER ATTRITION & COMMUNICATION STATUS VIEW]
+-- Please paste your custom, optimized SQL query for Dataset 8 below:
+
+-- >>> PASTE YOUR SQL HERE <<<
+
+
+--------------------------------------------------------------------------------
+
+
+================================================================================
+12. DYNAMIC ENGINE INTEGRATION & EXECUTION GUIDE
 ================================================================================
 When you populate the query placeholders above:
 1. The queries will be saved into `src/database_queries.py` or executed directly 
@@ -381,5 +495,5 @@ When you populate the query placeholders above:
    zero-latency performance for users while pulling fresh database records.
 
 ================================================================================
-END OF SPECIFICATION FILE
+END OF SPECIFICATION FILE (VERSION 2.0)
 ================================================================================

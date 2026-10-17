@@ -105,6 +105,10 @@ graph TD
   - Tailored tracking for Kuwait campaigns to monitor lower response/acceptance dynamics.
 - [x] **Searchable Influencer History:**
   - Lookup any influencer by phone or handle to see all historical chat threads, past campaigns, and reliability scores.
+- [x] **Direct Database Attrition Tracking (Replacing Legacy Dropbox Pending Users):**
+  - Fully automated classification of **No Response** (outbound company message without reply for >= 7 days).
+  - Identification of **Block** events directly from WhatsApp Pro DB (`Message.is_block = 1`).
+  - Identification of **Not Found** cases: Missing chat room phone OR contact phone's last 8 digits (`Right(8)`) missing from System Core DB `influencer_phones` master table.
 
 ---
 

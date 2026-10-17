@@ -60,16 +60,24 @@ This repository is an operational analytics and audit intelligence system connec
   - **203** total campaigns; **164** matched; **637** aligned; **239** missing Status 7 gaps.
 - **Fast Caching Layer:** `data/cached_pcloud_recon_campaigns.parquet` (31 KB) & `data/cached_pcloud_recon_influencers.parquet` (214 KB).
 
-### D. Live Operations Dashboard (`app.py`, `src/app.py`, `project/src/app.py`)
+### D. Influencer Communication Attrition Engine (Direct Database Replacement for Dropbox)
+- **Objective:** Replaces manual Dropbox parsing (`reference/No responce dropbox.py` & Google Sheet `Pending Users`) with live, automated database classification across WhatsApp Pro DB and System Core DB.
+- **Criteria & Rules:**
+  - **No Response:** Influencer was sent an outbound company message (`isFromMe = 1`) and has not replied for >= 7 days (1 full week elapsed without inbound message).
+  - **Block:** Flagged via `Message.is_block = 1` in WhatsApp Pro DB (contact blocked our WhatsApp line).
+  - **Not Found (Missing Phone):** Chat room exists (`roomId IS NOT NULL`) but contact phone is NULL or empty string.
+  - **Not Found (Unregistered in System):** Contact phone last 8 digits (`RIGHT(clean_phone, 8)`) do NOT exist anywhere in System Core DB `influencer_phones` table.
+
+### E. Live Operations Dashboard (`app.py`, `src/app.py`, `project/src/app.py`)
 - Built with Streamlit, Plotly, and responsive dark-mode CSS cards.
 - **Tab 1: Live Pulse & Alerts:** Unanswered conversations (Dynamic rule: Influencer sent last), SLA distribution (<15m, 15-60m, >60m). Full duration response time without artificial timeouts.
 - **Tab 2: Agent Scorecards & KPIs:** Agent response volumes, median reply times, shift attribution status banner.
-- **Tab 3: Influencer Intelligence:** Official database status breakdown, flakers & missed visits audit with dynamic column handling and phone masking.
+- **Tab 3: Influencer Intelligence:** Official database status breakdown, flakers & missed visits audit, and newly integrated communication attrition feed.
 - **Tab 4: Multi-Source Reconciliation (pCloud & Dropbox):**
   - **Sub-Tab 1 (pCloud Coverage Audit):** Active campaigns scope toggle (default: active campaigns under SQL criteria), drill-down table with masked phones, and one-click operational CSV export: `📥 تنزيل القائمة الإجرائية لتحديث الـ Status 7 (CSV)`.
   - **Sub-Tab 2 (Dropbox Reconciliation):** Campaign-level comparison (Target vs Sys Confirms vs Drop Confirms vs Gap) and influencer audit drill-down.
 - **Tab 5: Line Health & Infrastructure Status:** WhatsApp lines inventory and monitoring.
-- **Sidebar:** Dynamic operational controls with instant cache-clearing (`🔄 Force Reload / Clear Cache`), showing live counts for Roster, Dropbox, and pCloud gaps.
+- **Sidebar:** Dynamic operational controls with instant cache-clearing (`🔄 Force Reload / Clear Cache`), showing live counts for Roster, Dropbox, and pCloud gaps, plus embedded HD Screen Walkthrough Recorder.
 
 ---
 
